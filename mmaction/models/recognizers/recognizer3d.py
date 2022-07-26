@@ -32,18 +32,18 @@ class Recognizer3D(BaseRecognizer):
             losses.update(loss_aux)
 
         ''' GCN '''
-        feature = self.cls_head.avg_pool(x)
-        feature = self.cls_head.dropout(feature)
-        feature = feature.view(feature.shape[0], -1) # (1, 1024)
-        feature = self.gcn_head(feature) # (1, 2048)
+        # feature = self.cls_head.avg_pool(x)
+        # feature = self.cls_head.dropout(feature)
+        # feature = feature.view(feature.shape[0], -1) # (1, 1024)
+        # feature = self.gcn_head(feature) # (1, 2048)
 
-        classes_feature = self.gcn_net() # (2048, 17)
-        cls_score = torch.matmul(feature, classes_feature) # (1, 17)
-        cls_score = self.fc_cls(cls_score) # (1, 1024)
-        cls_score = self.cls_head.fc_cls(cls_score) # (1, 17)
+        # classes_feature = self.gcn_net() # (2048, 17)
+        # cls_score = torch.matmul(feature, classes_feature) # (1, 17)
+        # cls_score = self.fc_cls(cls_score) # (1, 1024)
+        # cls_score = self.cls_head.fc_cls(cls_score) # (1, 17)
 
         ''' origin classification head '''
-        # cls_score = self.cls_head(x)
+        cls_score = self.cls_head(x)
         gt_labels = labels.squeeze()
 
         start_epoch = 0

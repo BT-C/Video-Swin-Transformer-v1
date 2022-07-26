@@ -81,6 +81,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.sample_by_class = sample_by_class
         self.power = power
         self.dynamic_length = dynamic_length
+        
 
         assert not (self.multi_class and self.sample_by_class)
 
