@@ -203,8 +203,6 @@ class GCNUrbanPipeI3DHead(BaseHead):
 
         file_name = '/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/train.json'
         self.gcn_net = GCNResnet(adj_file=file_name)
-        # self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
-        # self.dropout = nn.Dropout(p=0.5)
         self.gcn_head = nn.Sequential(
             nn.Linear(1024, 2048),
             nn.Linear(2048, 2048)
@@ -294,8 +292,7 @@ class GCNResnet(nn.Module):
     def __init__(self, num_classes=17, in_channel=256, t=0.001, adj_file=None):
         super(GCNResnet, self).__init__()
         self.num_classes = num_classes
-        self.pooling = nn.MaxPool2d(14, 14)
-
+        
         self.gc1 = GraphConvolution(in_channel, 1024)
         self.gc2 = GraphConvolution(1024, 2048)
         self.relu = nn.LeakyReLU(0.2)
