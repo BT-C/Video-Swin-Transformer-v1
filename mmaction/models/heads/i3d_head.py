@@ -209,7 +209,7 @@ class GCNUrbanPipeI3DHead(BaseHead):
             nn.Linear(1024, 2048),
             nn.Linear(2048, 2048)
         )
-        self.fc_cls = nn.Sequential(
+        self.fc_cls_first = nn.Sequential(
             nn.Linear(17, 256),
             nn.Linear(256, 1024)
         )
@@ -236,6 +236,13 @@ class GCNUrbanPipeI3DHead(BaseHead):
         # [N, in_channels, 1, 1, 1]
         x = x.view(x.shape[0], -1)
         # [N, in_channels]
+
+        x = self.gcn_head(x) # (1, 2048)
+        classes_feature = self.gcn_net() # (2048, 17)
+        x = torch.matmul(x, classes_feature) # (1, 17)
+        x = self.fc_cls_first(x) # (1, 1024)
+        x = self.fc_cls(x) # (1, 17)
+
         cls_score = self.fc_cls(x)
         # [N, num_classes]
         return cls_score
