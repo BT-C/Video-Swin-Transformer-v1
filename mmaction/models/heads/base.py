@@ -98,7 +98,13 @@ class BaseHead(nn.Module, metaclass=ABCMeta):
             labels = ((1 - self.label_smooth_eps) * labels +
                       self.label_smooth_eps / self.num_classes)
 
-        loss_cls = self.loss_cls(cls_score, labels, **kwargs)
+        # loss_cls = self.loss_cls(cls_score, labels, **kwargs)
+        # ---------------------------------------------------------------------
+        # import torchvision.ops as ops
+        # loss_cls = ops.sigmoid_focal_loss(cls_score, labels).sum()
+        import torch.nn.functional as F
+        loss_cls = F.binary_cross_entropy(F.sigmoid(cls_score), labels)
+        # ---------------------------------------------------------------------
         # loss_cls may be dictionary or single tensor
         if isinstance(loss_cls, dict):
             losses.update(loss_cls)

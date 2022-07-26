@@ -2,7 +2,9 @@
 
 # set up environment
 conda env create -f environment.yml
-source activate kinetics
+#source activate kinetics
+conda activate kinetics
+pip install joblib
 pip install --upgrade youtube-dl
 
 DATASET=$1

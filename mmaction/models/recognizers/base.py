@@ -1,6 +1,7 @@
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
+from numpy import average
 
 import torch
 import torch.distributed as dist
@@ -186,7 +187,12 @@ class BaseRecognizer(nn.Module, metaclass=ABCMeta):
         batch_size = cls_score.shape[0]
         cls_score = cls_score.view(batch_size // num_segs, num_segs, -1)
 
-        if average_clips == 'prob':
+    # ---------------------------------------------------------------------------
+        average_clips = 'sigmoid'
+        if average_clips == 'sigmoid':
+            cls_score = F.sigmoid(cls_score).mean(dim=1)
+    # ---------------------------------------------------------------------------
+        elif average_clips == 'prob':
             cls_score = F.softmax(cls_score, dim=2).mean(dim=1)
         elif average_clips == 'score':
             cls_score = cls_score.mean(dim=1)
@@ -255,6 +261,12 @@ class BaseRecognizer(nn.Module, metaclass=ABCMeta):
                 imgs, label = self.blending(imgs, label)
             return self.forward_train(imgs, label, **kwargs)
 
+        # ====================================================================================
+        if kwargs is not None:
+            scores = self.forward_test(imgs)
+            return [{kwargs['img_metas'][0]['frame_dir'] : scores.reshape(-1).tolist()}]
+            # return [{kwargs['img_metas'][0]['frame_dir'] : scores.tolist()}]
+        # ====================================================================================
         return self.forward_test(imgs, **kwargs)
 
     def train_step(self, data_batch, optimizer, **kwargs):
@@ -291,7 +303,8 @@ class BaseRecognizer(nn.Module, metaclass=ABCMeta):
             assert item in data_batch
             aux_info[item] = data_batch[item]
 
-        losses = self(imgs, label, return_loss=True, **aux_info)
+        # losses = self(imgs, label, return_loss=True, **aux_info)
+        losses = self(imgs, label, return_loss=True, **aux_info, **kwargs)
 
         loss, log_vars = self._parse_losses(losses)
 

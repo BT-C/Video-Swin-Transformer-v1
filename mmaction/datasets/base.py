@@ -98,7 +98,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             class_prob = [x / summ for x in class_prob]
 
             self.class_prob = dict(zip(self.video_infos_by_class, class_prob))
-
+    
     @abstractmethod
     def load_annotations(self):
         """Load the annotation according to ann_file into video_infos."""

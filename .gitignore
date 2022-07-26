@@ -112,7 +112,9 @@ venv.bak/
 *.pkl.json
 *.log.json
 benchlist.txt
+Recurrent/result/
 work_dirs/
+
 
 # Pytorch
 *.pth

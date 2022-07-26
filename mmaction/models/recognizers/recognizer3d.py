@@ -9,6 +9,16 @@ from .base import BaseRecognizer
 class Recognizer3D(BaseRecognizer):
     """3D recognizer model framework."""
 
+    def __init__(self,
+                 backbone,
+                 cls_head=None,
+                 neck=None,
+                 train_cfg=None,
+                 test_cfg=None):
+        super(Recognizer3D, self).__init__(backbone, cls_head, neck, train_cfg, test_cfg)
+        self.momentum_score = torch.zeros((1, 17))
+        self.momentum_alpha = 0.9
+
     def forward_train(self, imgs, labels, **kwargs):
         """Defines the computation performed at every call when training."""
 
@@ -21,12 +31,63 @@ class Recognizer3D(BaseRecognizer):
             x, loss_aux = self.neck(x, labels.squeeze())
             losses.update(loss_aux)
 
-        cls_score = self.cls_head(x)
+        ''' GCN '''
+        feature = self.cls_head.avg_pool(x)
+        feature = self.cls_head.dropout(feature)
+        feature = feature.view(feature.shape[0], -1) # (1, 1024)
+        feature = self.gcn_head(feature) # (1, 2048)
+
+        classes_feature = self.gcn_net() # (2048, 17)
+        cls_score = torch.matmul(feature, classes_feature) # (1, 17)
+        cls_score = self.fc_cls(cls_score) # (1, 1024)
+        cls_score = self.cls_head.fc_cls(cls_score) # (1, 17)
+
+        ''' origin classification head '''
+        # cls_score = self.cls_head(x)
         gt_labels = labels.squeeze()
-        loss_cls = self.cls_head.loss(cls_score, gt_labels, **kwargs)
+
+        start_epoch = 0
+        ''' momentu logits'''
+        # if kwargs['epoch'] >= start_epoch:
+        #     import torch.nn.functional as F
+        #     if self.momentum_score.device != cls_score.device:
+        #         self.momentum_score = self.momentum_score.to(cls_score.device)
+        #     self.dist_gather_momentum_scores(cls_score, gt_labels, kwargs['epoch'])
+        #     gt_index = (gt_labels.long() == 1)
+        # if kwargs['epoch'] >= start_epoch + 3:
+        #     self.momentum_alpha = 0.99
+        #     kd_loss = F.mse_loss(cls_score[:, gt_index], self.momentum_score[:, gt_index].detach())
+        #     losses.update({'kd_loss' : kd_loss * 1e-2})
+
+        backup_kwargs = {}
+        # loss_cls = self.cls_head.loss(cls_score, gt_labels, **kwargs)
+        loss_cls = self.cls_head.loss(cls_score, gt_labels, **backup_kwargs)
         losses.update(loss_cls)
 
         return losses
+
+    def dist_gather_momentum_scores(self, cls_score, gt_labels, epoch):
+        import torch.nn.functional as F
+        import torch.distributed as dist
+
+        current_rank = dist.get_rank()
+        world_size = dist.get_world_size()
+        scores_gather_list = [torch.zeros_like(cls_score) for _ in range(world_size)]
+        gt_label_gather_list = [torch.zeros_like(gt_labels) for _ in range(world_size)]
+        dist.all_gather(scores_gather_list, cls_score, async_op=False)
+        dist.all_gather(gt_label_gather_list, gt_labels, async_op=False)                
+        
+        for j in range(world_size):
+            gt_index = (gt_label_gather_list[j].long() == 1)
+            # if current_rank == 0:
+                # print(scores_gather_list[j][0, gt_index])
+            self.momentum_score = (1 - gt_label_gather_list[j]) * self.momentum_score \
+                                    + (self.momentum_alpha) * (self.momentum_score * gt_index) \
+                                    + (1 - self.momentum_alpha) * scores_gather_list[j] * gt_index
+        if current_rank == 0:
+            # print(scores_gather_list[0][0, gt_index])
+            # print(self.momentum_score)
+            pass
 
     def _do_test(self, imgs):
         """Defines the computation performed at every call when evaluation,
@@ -81,6 +142,7 @@ class Recognizer3D(BaseRecognizer):
         # should have cls_head if not extracting features
         assert self.with_cls_head
         cls_score = self.cls_head(feat)
+        # return cls_score.mean(dim=0)
         cls_score = self.average_clip(cls_score, num_segs)
         return cls_score
 
@@ -117,3 +179,9 @@ class Recognizer3D(BaseRecognizer):
         utils."""
         assert self.with_cls_head
         return self._do_test(imgs)
+
+
+
+# ==================================================================================================
+
+# ==================================================================================================

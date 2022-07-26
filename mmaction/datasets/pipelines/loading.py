@@ -1,4 +1,5 @@
 import io
+from itertools import combinations_with_replacement
 import os
 import os.path as osp
 import shutil
@@ -231,11 +232,13 @@ class SampleFrames:
                 to the next transform in pipeline.
         """
         total_frames = results['total_frames']
+        # print(total_frames)
         if self.frame_uniform:  # sthv2 sampling strategy
             assert results['start_index'] == 0
             frame_inds = self.get_seq_frames(total_frames)
         else:
             clip_offsets = self._sample_clips(total_frames)
+            # self.clip_len = total_frames // 4
             frame_inds = clip_offsets[:, None] + np.arange(
                 self.clip_len)[None, :] * self.frame_interval
             frame_inds = np.concatenate(frame_inds)
@@ -997,6 +1000,9 @@ class DecordDecode:
             results['frame_inds'] = np.squeeze(results['frame_inds'])
 
         frame_inds = results['frame_inds']
+        # print(len(container), frame_inds)
+        # print(len(container), frame_inds.max())
+        # assert len(container) > frame_inds.max()
         # Generate frame index mapping in order
         frame_dict = {
             idx: container[idx].asnumpy()
