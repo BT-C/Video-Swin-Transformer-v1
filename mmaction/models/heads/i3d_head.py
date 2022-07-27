@@ -300,7 +300,8 @@ class GCNResnet(nn.Module):
         self.query_embedding = nn.Embedding(num_classes, in_channel)
 
         _adj = self.gen_A(num_classes, t, adj_file)
-        self.A = nn.Parameter(torch.from_numpy(_adj).float())
+        # self.A = nn.Parameter(torch.from_numpy(_adj).float())
+        self.A = torch.from_numpy(_adj).float()
         # image normalization
         self.image_normalization_mean = [0.485, 0.456, 0.406]
         self.image_normalization_std = [0.229, 0.224, 0.225]
@@ -313,6 +314,7 @@ class GCNResnet(nn.Module):
 
         inp = self.query_embedding.weight
         adj = self.gen_adj(self.A).detach()
+        adj = adj.to(inp.device)
         x = self.gc1(inp, adj)
         x = self.relu(x)
         x = self.gc2(x, adj)
