@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
-from timm.models.layers import DropPath, trunc_normal_
+from timm.models.layers import DropPath, trunc_normal_, to_2tuple
 
 from mmcv.runner import load_checkpoint
 from mmaction.utils import get_root_logger
@@ -261,7 +261,7 @@ class SwinTransformerBlock3D(nn.Module):
 
     def __init__(self, dim, num_heads, window_size=(2,7,7), shift_size=(0,0,0),
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0., drop_path=0.,
-                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, use_checkpoint=False):
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, use_checkpoint=False, pretrained_window_sizes=0):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
@@ -277,7 +277,7 @@ class SwinTransformerBlock3D(nn.Module):
         self.norm1 = norm_layer(dim)
         self.attn = WindowAttention3D(
             dim, window_size=self.window_size, num_heads=num_heads,
-            qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
+            qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, pretrained_window_sizes=to_2tuple(pretrained_window_sizes))
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
@@ -439,7 +439,8 @@ class BasicLayer(nn.Module):
                  drop_path=0.,
                  norm_layer=nn.LayerNorm,
                  downsample=None,
-                 use_checkpoint=False):
+                 use_checkpoint=False,
+                 pretrained_window_sizes=0): # add pretrained_window_sizes
         super().__init__()
         self.window_size = window_size
         self.shift_size = tuple(i // 2 for i in window_size)
@@ -461,6 +462,7 @@ class BasicLayer(nn.Module):
                 drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
                 norm_layer=norm_layer,
                 use_checkpoint=use_checkpoint,
+                pretrained_window_sizes=pretrained_window_sizes
             )
             for i in range(depth)])
         
@@ -577,7 +579,8 @@ class SwinTransformer3D(nn.Module):
                  norm_layer=nn.LayerNorm,
                  patch_norm=False,
                  frozen_stages=-1,
-                 use_checkpoint=False):
+                 use_checkpoint=False,
+                 pretrained_window_sizes=[0, 0, 0, 0]): # add pretrained_window_sized
         super().__init__()
 
         self.pretrained = pretrained
@@ -615,7 +618,8 @@ class SwinTransformer3D(nn.Module):
                 drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],
                 norm_layer=norm_layer,
                 downsample=PatchMerging if i_layer<self.num_layers-1 else None,
-                use_checkpoint=use_checkpoint)
+                use_checkpoint=use_checkpoint,
+                pretrained_window_sizes=pretrained_window_sizes)  # add pretrained_window_sizes
             self.layers.append(layer)
 
         self.num_features = int(embed_dim * 2**(self.num_layers-1))
