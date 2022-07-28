@@ -112,7 +112,7 @@ class WindowAttention3D(nn.Module):
         self.scale = qk_scale or head_dim ** -0.5
         '''
         self.dim = dim
-        self.window_size = window_size  # Wh, Ww
+        self.window_size = window_size  # Wd, Wh, Ww
         self.pretrained_window_size = pretrained_window_size
         self.num_heads = num_heads
 
@@ -125,14 +125,19 @@ class WindowAttention3D(nn.Module):
         self.cpb_mlp = nn.Sequential(nn.Linear(2, 512, bias=True),
                                      nn.ReLU(inplace=True),
                                      nn.Linear(512, num_heads, bias=False))
-        relative_coords_h = torch.arange(-(self.window_size[0] - 1), self.window_size[0], dtype=torch.float32)
-        relative_coords_w = torch.arange(-(self.window_size[1] - 1), self.window_size[1], dtype=torch.float32)
+
+        #-----------------------------
+        relative_coords_d = torch.arange(-(self.window_size[0] - 1), self.window_size[0], dtype=torch.float32)
+        relative_coords_h = torch.arange(-(self.window_size[1] - 1), self.window_size[1], dtype=torch.float32)
+        relative_coords_w = torch.arange(-(self.window_size[2] - 1), self.window_size[2], dtype=torch.float32)
         relative_coords_table = torch.stack(
-            torch.meshgrid([relative_coords_h,
-                            relative_coords_w])).permute(1, 2, 0).contiguous().unsqueeze(0)  # 1, 2*Wh-1, 2*Ww-1, 2
+            torch.meshgrid([relative_coords_d,
+                            relative_coords_h,
+                            relative_coords_w])).permute(1, 2, 3, 0).contiguous().unsqueeze(0)  # 1, 1*Wd-1, 2*Wh-1, 2*Ww-1, 3
         if pretrained_window_size[0] > 0:
             relative_coords_table[:, :, :, 0] /= (pretrained_window_size[0] - 1)
             relative_coords_table[:, :, :, 1] /= (pretrained_window_size[1] - 1)
+            relative_coords_table[:, :, :, 2] /= (pretrained_window_size[2] - 1)
         else:
             relative_coords_table[:, :, :, 0] /= (self.window_size[0] - 1)
             relative_coords_table[:, :, :, 1] /= (self.window_size[1] - 1)
