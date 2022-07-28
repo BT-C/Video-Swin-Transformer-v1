@@ -55,9 +55,27 @@ def test_result_json(file_name):
                 print(arr)
     print(count)
 
+def test_count(file_name):
+    file = json.load(open(file_name, 'r'))
+    count_arr = [0 for _ in range(17)]
+    for key in file:
+        arr = file[key]
+        if len(arr) == 1:
+            count_arr[arr[0]] += 1
+    
+    print(count_arr)
+    count_arr = [0 for _ in range(17)]
+    for key in file:
+        arr = file[key]
+        for i in range(len(arr)):
+            count_arr[arr[i]] += 1
+    print(count_arr)
+
+
 if __name__ == '__main__':
     file_name = '/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/train.json'
     # file_name = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_backup.json'
     # file_name = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result.json'
-    test_relation(file_name)
+    # test_relation(file_name)
     # test_result_json(file_name)
+    test_count(file_name)

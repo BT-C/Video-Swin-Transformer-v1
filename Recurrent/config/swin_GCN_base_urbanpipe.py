@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics400_22k.pth'
-# load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics600_22k.pth'
+load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics600_22k.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v2-pretrained/epoch_80.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v5-sigmoid/v2/epoch_100.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v5-sigmoid-momentum-score/v1/epoch_26.pth'
@@ -119,12 +119,13 @@ evaluation = dict(
 #                                                  'norm': dict(decay_mult=0.),
 #                                                  'backbone': dict(lr_mult=0.1)}))
 
-optimizer = dict(type='AdamW', lr=1e-3, betas=(0.9, 0.999), weight_decay=0.05,
+optimizer = dict(type='AdamW', lr=7e-4, betas=(0.9, 0.999), weight_decay=0.05,
                  paramwise_cfg=dict(custom_keys={'absolute_pos_embed': dict(decay_mult=0.),
                                                  'relative_position_bias_table': dict(decay_mult=0.),
                                                  'norm': dict(decay_mult=0.),
                                                  'backbone': dict(lr_mult=0.1),
-                                                 'gcn': dict(lr_mult=0.1)}))
+                                                #  'gcn': dict(lr_mult=0.1)
+                                                 }))
 
 # learning policy
 lr_config = dict(
