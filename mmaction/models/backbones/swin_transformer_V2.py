@@ -97,14 +97,25 @@ class WindowAttention3D(nn.Module):
         proj_drop (float, optional): Dropout ratio of output. Default: 0.0
     """
 
+    '''
     def __init__(self, dim, window_size, num_heads, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
+    '''
+    def __init__(self, dim, window_size, num_heads, qkv_bias=True, attn_drop=0., proj_drop=0.,
+                 pretrained_window_size=[0, 0]):
 
         super().__init__()
+        '''
         self.dim = dim
         self.window_size = window_size  # Wd, Wh, Ww
         self.num_heads = num_heads
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
+        '''
+        self.dim = dim
+        self.window_size = window_size  # Wh, Ww
+        self.pretrained_window_size = pretrained_window_size
+        self.num_heads = num_heads
+
 
         # define a parameter table of relative position bias
         self.relative_position_bias_table = nn.Parameter(
