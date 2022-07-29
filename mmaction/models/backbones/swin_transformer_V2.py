@@ -288,7 +288,10 @@ class SwinTransformerBlock3D(nn.Module):
         B, D, H, W, C = x.shape
         window_size, shift_size = get_window_size((D, H, W), self.window_size, self.shift_size)
 
+        '''
         x = self.norm1(x)
+        '''
+
         # pad feature maps to multiples of window size
         pad_l = pad_t = pad_d0 = 0
         pad_d1 = (window_size[0] - D % window_size[0]) % window_size[0]
@@ -321,7 +324,10 @@ class SwinTransformerBlock3D(nn.Module):
         return x
 
     def forward_part2(self, x):
+        '''
         return self.drop_path(self.mlp(self.norm2(x)))
+        '''
+        return self.drop_path(self.norm2(self.mlp(x)))
 
     def forward(self, x, mask_matrix):
         """ Forward function.
@@ -336,7 +342,10 @@ class SwinTransformerBlock3D(nn.Module):
             x = checkpoint.checkpoint(self.forward_part1, x, mask_matrix)
         else:
             x = self.forward_part1(x, mask_matrix)
+        '''
         x = shortcut + self.drop_path(x)
+        '''
+        x = shortcut + self.drop_path(self.norm1(x))
 
         if self.use_checkpoint:
             x = x + checkpoint.checkpoint(self.forward_part2, x)
@@ -619,7 +628,7 @@ class SwinTransformer3D(nn.Module):
                 norm_layer=norm_layer,
                 downsample=PatchMerging if i_layer<self.num_layers-1 else None,
                 use_checkpoint=use_checkpoint,
-                pretrained_window_sizes=pretrained_window_sizes)  # add pretrained_window_sizes
+                pretrained_window_sizes=pretrained_window_sizes[i_layer])  # add pretrained_window_sizes
             self.layers.append(layer)
 
         self.num_features = int(embed_dim * 2**(self.num_layers-1))
