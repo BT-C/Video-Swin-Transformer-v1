@@ -66,8 +66,6 @@ def window_reverse(windows, window_size, B, D, H, W):
     return x
 
 
-
-
 def get_window_size(x_size, window_size, shift_size=None):
     use_window_size = list(window_size)
     if shift_size is not None:
@@ -84,7 +82,7 @@ def get_window_size(x_size, window_size, shift_size=None):
         return tuple(use_window_size), tuple(use_shift_size)
 
 
-class WindowAttention3D(nn.Module):
+class WindowAttention3DV2(nn.Module):
     """ Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
     Args:
@@ -241,7 +239,7 @@ class WindowAttention3D(nn.Module):
         return x
 
 
-class SwinTransformerBlock3D(nn.Module):
+class SwinTransformerBlock3DV2(nn.Module):
     """ Swin Transformer Block.
 
     Args:
@@ -275,7 +273,7 @@ class SwinTransformerBlock3D(nn.Module):
         assert 0 <= self.shift_size[2] < self.window_size[2], "shift_size must in 0-window_size"
 
         self.norm1 = norm_layer(dim)
-        self.attn = WindowAttention3D(
+        self.attn = WindowAttention3DV2(
             dim, window_size=self.window_size, num_heads=num_heads,
             qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, pretrained_window_sizes=to_2tuple(pretrained_window_sizes))
 
@@ -355,7 +353,7 @@ class SwinTransformerBlock3D(nn.Module):
         return x
 
 
-class PatchMerging(nn.Module):
+class PatchMergingV2(nn.Module):
     """ Patch Merging Layer
 
     Args:
@@ -417,7 +415,7 @@ def compute_mask(D, H, W, window_size, shift_size, device):
     return attn_mask
 
 
-class BasicLayer(nn.Module):
+class BasicLayerV2(nn.Module):
     """ A basic Swin Transformer layer for one stage.
 
     Args:
@@ -458,7 +456,7 @@ class BasicLayer(nn.Module):
 
         # build blocks
         self.blocks = nn.ModuleList([
-            SwinTransformerBlock3D(
+            SwinTransformerBlock3DV2(
                 dim=dim,
                 num_heads=num_heads,
                 window_size=window_size,
@@ -503,7 +501,7 @@ class BasicLayer(nn.Module):
         return x
 
 
-class PatchEmbed3D(nn.Module):
+class PatchEmbed3DV2(nn.Module):
     """ Video to Patch Embedding.
 
     Args:
@@ -546,7 +544,7 @@ class PatchEmbed3D(nn.Module):
         return x
 
 @BACKBONES.register_module()
-class SwinTransformer3D(nn.Module):
+class SwinTransformer3DV2(nn.Module):
     """ Swin Transformer backbone.
         A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`  -
           https://arxiv.org/pdf/2103.14030
@@ -602,7 +600,7 @@ class SwinTransformer3D(nn.Module):
         self.patch_size = patch_size
 
         # split image into non-overlapping patches
-        self.patch_embed = PatchEmbed3D(
+        self.patch_embed = PatchEmbed3DV2(
             patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim,
             norm_layer=norm_layer if self.patch_norm else None)
 
@@ -614,7 +612,7 @@ class SwinTransformer3D(nn.Module):
         # build layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
-            layer = BasicLayer(
+            layer = BasicLayerV2(
                 dim=int(embed_dim * 2**i_layer),
                 depth=depths[i_layer],
                 num_heads=num_heads[i_layer],
@@ -626,7 +624,7 @@ class SwinTransformer3D(nn.Module):
                 attn_drop=attn_drop_rate,
                 drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],
                 norm_layer=norm_layer,
-                downsample=PatchMerging if i_layer<self.num_layers-1 else None,
+                downsample=PatchMergingV2 if i_layer<self.num_layers-1 else None,
                 use_checkpoint=use_checkpoint,
                 pretrained_window_sizes=pretrained_window_sizes[i_layer])  # add pretrained_window_sizes
             self.layers.append(layer)
@@ -756,6 +754,6 @@ class SwinTransformer3D(nn.Module):
 
     def train(self, mode=True):
         """Convert the model into training mode while keep layers freezed."""
-        super(SwinTransformer3D, self).train(mode)
+        super(SwinTransformer3DV2, self).train(mode)
         self._freeze_stages()
 
