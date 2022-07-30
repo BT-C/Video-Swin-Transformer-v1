@@ -13,10 +13,12 @@ from .resnet_tsm import ResNetTSM
 from .tanet import TANet
 from .x3d import X3D
 from .swin_transformer import SwinTransformer3D
+from .swin_transformer_V2 import SwinTransformer3DV2
 
 
 __all__ = [
     'C3D', 'ResNet', 'ResNet3d', 'ResNetTSM', 'ResNet2Plus1d',
     'ResNet3dSlowFast', 'ResNet3dSlowOnly', 'ResNet3dCSN', 'ResNetTIN', 'X3D',
-    'ResNetAudio', 'ResNet3dLayer', 'MobileNetV2TSM', 'MobileNetV2', 'TANet', 'SwinTransformer3D'
+    'ResNetAudio', 'ResNet3dLayer', 'MobileNetV2TSM', 'MobileNetV2', 'TANet', 'SwinTransformer3D',
+    'SwinTransformer3DV2'
 ]

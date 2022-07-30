@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
-from timm.models.layers import DropPath, trunc_normal_, to_2tuple
+from timm.models.layers import DropPath, trunc_normal_, to_2tuple, to_3tuple
 
 from mmcv.runner import load_checkpoint
 from mmaction.utils import get_root_logger
@@ -98,8 +98,8 @@ class WindowAttention3DV2(nn.Module):
     '''
     def __init__(self, dim, window_size, num_heads, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
     '''
-    def __init__(self, dim, window_size, num_heads, qkv_bias=True, attn_drop=0., proj_drop=0.,
-                 pretrained_window_size=[0, 0]):
+    def __init__(self, dim, window_size, num_heads, qkv_bias=True, qk_scale=None, attn_drop=0., proj_drop=0.,
+                 pretrained_window_sizes=[0, 0]):
 
         super().__init__()
         '''
@@ -111,7 +111,7 @@ class WindowAttention3DV2(nn.Module):
         '''
         self.dim = dim
         self.window_size = window_size  # Wd, Wh, Ww
-        self.pretrained_window_size = pretrained_window_size
+        self.pretrained_window_sizes = pretrained_window_sizes
         self.num_heads = num_heads
 
         '''
@@ -132,10 +132,10 @@ class WindowAttention3DV2(nn.Module):
             torch.meshgrid([relative_coords_d,
                             relative_coords_h,
                             relative_coords_w])).permute(1, 2, 3, 0).contiguous().unsqueeze(0)  # 1, 1*Wd-1, 2*Wh-1, 2*Ww-1, 3
-        if pretrained_window_size[0] > 0:
-            relative_coords_table[:, :, :, 0] /= (pretrained_window_size[0] - 1)
-            relative_coords_table[:, :, :, 1] /= (pretrained_window_size[1] - 1)
-            relative_coords_table[:, :, :, 2] /= (pretrained_window_size[2] - 1)
+        if pretrained_window_sizes[0] > 0:
+            relative_coords_table[:, :, :, 0] /= (pretrained_window_sizes[0] - 1)
+            relative_coords_table[:, :, :, 1] /= (pretrained_window_sizes[1] - 1)
+            relative_coords_table[:, :, :, 2] /= (pretrained_window_sizes[2] - 1)
         else:
             relative_coords_table[:, :, :, 0] /= (self.window_size[0] - 1)
             relative_coords_table[:, :, :, 1] /= (self.window_size[1] - 1)
@@ -275,7 +275,7 @@ class SwinTransformerBlock3DV2(nn.Module):
         self.norm1 = norm_layer(dim)
         self.attn = WindowAttention3DV2(
             dim, window_size=self.window_size, num_heads=num_heads,
-            qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, pretrained_window_sizes=to_2tuple(pretrained_window_sizes))
+            qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, pretrained_window_sizes=to_3tuple(pretrained_window_sizes))
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
