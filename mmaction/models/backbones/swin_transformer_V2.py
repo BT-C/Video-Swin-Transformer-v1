@@ -121,8 +121,12 @@ class WindowAttention3DV2(nn.Module):
         '''
         self.logit_scale = nn.Parameter(torch.log(10 * torch.ones((num_heads, 1, 1))), requires_grad=True)
 
-        
+        '''
         self.cpb_mlp = nn.Sequential(nn.Linear(2, 512, bias=True),
+                                     nn.ReLU(inplace=True),
+                                     nn.Linear(512, num_heads, bias=False))
+        '''
+        self.cpb_mlp_3D = nn.Sequential(nn.Linear(3, 512, bias=True),
                                      nn.ReLU(inplace=True),
                                      nn.Linear(512, num_heads, bias=False))
 
@@ -130,23 +134,23 @@ class WindowAttention3DV2(nn.Module):
         relative_coords_d = torch.arange(-(self.window_size[0] - 1), self.window_size[0], dtype=torch.float32)
         relative_coords_h = torch.arange(-(self.window_size[1] - 1), self.window_size[1], dtype=torch.float32)
         relative_coords_w = torch.arange(-(self.window_size[2] - 1), self.window_size[2], dtype=torch.float32)
-        temp_relative_coords_table = torch.stack(
+        relative_coords_table_3D = torch.stack(
             torch.meshgrid([relative_coords_d,
                             relative_coords_h,
                             relative_coords_w])).permute(1, 2, 3, 0).contiguous().unsqueeze(0)  # 1, 1*Wd-1, 2*Wh-1, 2*Ww-1, 3
         if pretrained_window_sizes[0] > 0:
-            temp_relative_coords_table[:, :, :, 0] /= (pretrained_window_sizes[0] - 1)
-            temp_relative_coords_table[:, :, :, 1] /= (pretrained_window_sizes[1] - 1)
-            temp_relative_coords_table[:, :, :, 2] /= (pretrained_window_sizes[2] - 1)
+            relative_coords_table_3D[:, :, :, 0] /= (pretrained_window_sizes[0] - 1)
+            relative_coords_table_3D[:, :, :, 1] /= (pretrained_window_sizes[1] - 1)
+            relative_coords_table_3D[:, :, :, 2] /= (pretrained_window_sizes[2] - 1)
         else:
-            temp_relative_coords_table[:, :, :, 0] /= (self.window_size[0] - 1)
-            temp_relative_coords_table[:, :, :, 1] /= (self.window_size[1] - 1)
-            temp_relative_coords_table[:, :, :, 2] /= (self.window_size[2] - 1)
-        temp_relative_coords_table *= 8  # normalize to -8, 8
-        temp_relative_coords_table = torch.sign(temp_relative_coords_table) * torch.log2(
-            torch.abs(temp_relative_coords_table) + 1.0) / np.log2(8)
+            relative_coords_table_3D[:, :, :, 0] /= (self.window_size[0] - 1)
+            relative_coords_table_3D[:, :, :, 1] /= (self.window_size[1] - 1)
+            relative_coords_table_3D[:, :, :, 2] /= (self.window_size[2] - 1)
+        relative_coords_table_3D *= 8  # normalize to -8, 8
+        relative_coords_table_3D = torch.sign(relative_coords_table_3D) * torch.log2(
+            torch.abs(relative_coords_table_3D) + 1.0) / np.log2(8)
 
-        self.register_buffer("temp_relative_coords_table", temp_relative_coords_table)
+        self.register_buffer("relative_coords_table_3D", relative_coords_table_3D)
         #-----------------------------
 
 
@@ -218,7 +222,7 @@ class WindowAttention3DV2(nn.Module):
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wd*Wh*Ww, Wd*Wh*Ww
         attn = attn + relative_position_bias.unsqueeze(0) # B_, nH, N, N
         '''
-        relative_position_bias_table = self.cpb_mlp(self.temp_relative_coords_table).view(-1, self.num_heads)
+        relative_position_bias_table = self.cpb_mlp_3D(self.relative_coords_table_3D).view(-1, self.num_heads)
         relative_position_bias = relative_position_bias_table[self.relative_position_index[:N, :N].reshape(-1)].reshape(
             N, N, -1)  # Wd*Wh*Ww,Wd*Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
