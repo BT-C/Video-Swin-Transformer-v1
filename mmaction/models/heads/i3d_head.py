@@ -136,16 +136,16 @@ class UrbanPipeI3DHead(BaseHead):
         Returns:
             torch.Tensor: The classification scores for input samples.
         """
-        # [N, in_channels, 4, 7, 7]
+        # [N, in_channels, 4, 7, 7]  # swin-large-v2 (1, 1536, 16, 7, 7)
         if self.avg_pool is not None:
-            x = self.avg_pool(x)
+            x = self.avg_pool(x) # swin-large-v2 (1, 1536, 1, 1, 1)
         # [N, in_channels, 1, 1, 1]
         if self.dropout is not None:
             x = self.dropout(x)
         # [N, in_channels, 1, 1, 1]
-        x = x.view(x.shape[0], -1)
+        x = x.view(x.shape[0], -1) # swin-large-v2 (1, 1536)
         # [N, in_channels]
-        cls_score = self.fc_cls(x)
+        cls_score = self.fc_cls(x) # (1, 17)
         # [N, num_classes]
         return cls_score
 
