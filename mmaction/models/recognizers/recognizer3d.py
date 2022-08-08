@@ -18,18 +18,34 @@ class Recognizer3D(BaseRecognizer):
         super(Recognizer3D, self).__init__(backbone, cls_head, neck, train_cfg, test_cfg)
         self.momentum_score = torch.zeros((1, 17))
         self.momentum_alpha = 0.9
+        self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
+        self.clip_fc = nn.Linear(16, 32)
+        self.cas_fc = nn.Linear(1536, 17)
+        self.class_fc = nn.Linear(1536, 1)
 
     def forward_train(self, imgs, labels, **kwargs):
         """Defines the computation performed at every call when training."""
 
         assert self.with_cls_head
-        imgs = imgs.reshape((-1, ) + imgs.shape[2:])
+        imgs = imgs.reshape((-1, ) + imgs.shape[2:]) # (1, 3, 32, 224, 224)
         losses = dict()
 
-        x = self.extract_feat(imgs)
+        x = self.extract_feat(imgs) # (1, 1536, 16, 7, 7)
         if self.with_neck:
             x, loss_aux = self.neck(x, labels.squeeze())
             losses.update(loss_aux)
+
+        ''' Weakly-supervise action location'''
+        feature_x = self.pool_2d(x) # (1, 1536, 16, 1, 1)
+        feature_x = feature_x.squeeze() # (1536, 16)
+        feature_x = self.clip_fc(feature_x) # (1536, 32) (T, D)
+        cas = self.cas_fc(feature_x.T).T # (17, 32)
+        class_vector = self.class_fc(feature_x.T) # (32, 1)
+        class_score = torch.mm(cas, class_vector).T # (1, 17)
+        import torch.nn.functional as F
+        wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
+        losses.update({"wsal_loss" : wsal_loss_cls})
+
 
         ''' GCN '''
         # feature = self.cls_head.avg_pool(x)

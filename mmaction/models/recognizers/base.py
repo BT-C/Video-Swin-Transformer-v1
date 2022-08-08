@@ -155,8 +155,8 @@ class BaseRecognizer(nn.Module, metaclass=ABCMeta):
         elif self.backbone_from == 'timm':
             x = self.backbone.forward_features(imgs)
         else:
-            x = self.backbone(imgs)
-        return x
+            x = self.backbone(imgs) # (1, 3, 32, 224, 224)
+        return x # (1, 1536, 16, 7, 7)
 
     def average_clip(self, cls_score, num_segs=1):
         """Averaging class score over multiple clips.

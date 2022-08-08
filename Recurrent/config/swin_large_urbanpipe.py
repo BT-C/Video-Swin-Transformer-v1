@@ -8,12 +8,13 @@ _base_ = [
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v5-sigmoid/v2/epoch_100.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v5-sigmoid-momentum-score/v1/epoch_26.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/swin_large_patch4_window12_384_22k.pth'
+load_from = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v6-swin-large/v2/epoch_100.pth'
 model=dict(
     backbone=dict(
         # pretrained='https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window877_kinetics600_22k.pth',
         # pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics600_22k.pth',
         # pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics400_22k.pth',
-        pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_large_patch4_window12_384_22k.pth',
+        # pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_large_patch4_window12_384_22k.pth',
         patch_size=(2,4,4), drop_path_rate=0.3
     ), 
     # train_cfg=dict(
@@ -76,8 +77,10 @@ test_pipeline = [
         num_clips=4,
         test_mode=True),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(-1, 224)),
-    dict(type='ThreeCrop', crop_size=224),
+    # dict(type='Resize', scale=(-1, 224)),
+    # dict(type='ThreeCrop', crop_size=224),
+    dict(type='Resize', scale=(-1, 384)),
+    dict(type='ThreeCrop', crop_size=384),
     dict(type='Flip', flip_ratio=0),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),

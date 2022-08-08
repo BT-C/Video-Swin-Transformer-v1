@@ -648,13 +648,13 @@ class SwinTransformer3D(nn.Module):
             raise TypeError('pretrained must be a str or None')
 
     def forward(self, x):
-        """Forward function."""
-        x = self.patch_embed(x)
+        """Forward function.""" # x: (1, 3, 32, 224, 224)
+        x = self.patch_embed(x) # (1, 192, 16, 56, 56)
 
-        x = self.pos_drop(x)
+        x = self.pos_drop(x) # (1, 192, 16, 56, 56)
 
         for layer in self.layers:
-            x = layer(x.contiguous())
+            x = layer(x.contiguous()) # (1, 384, 16, 28, 28) -> (1, 768, 16, 14, 14) -> (1, 1536, 16, 7, 7) -> (1, 1536, 16, 7, 7)
 
         x = rearrange(x, 'n c d h w -> n d h w c')
         x = self.norm(x)
