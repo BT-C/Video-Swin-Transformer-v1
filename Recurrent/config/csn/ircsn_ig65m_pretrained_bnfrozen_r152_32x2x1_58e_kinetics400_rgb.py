@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/ircsn_r152.py', '../_base_/default_runtime.py'
+    '../_base_/models/ircsn_r152_urbanpipe.py', '../_base_/default_runtime.py'
 ]
 
 # model settings
