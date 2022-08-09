@@ -348,17 +348,25 @@ def main():
     else:
         outputs = inference_pytorch(args, cfg, distributed, data_loader)
 
-    result_arr = {}
+    # ===============================================================================
+    logits_dict = {}
+    score_dict = {}
     for output in outputs:
-        result_arr.update(output)
+        key = list(output)[0]
+        score_dict.update({key : output[key][0]})
+        logits_dict.update({key : output[key][1]})
+
     import json
     
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_focal_32_100.json', 'w') as fd:
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_32_95.json', 'w') as fd:
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_160_87.json', 'w') as fd:
     with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result.json', 'w') as fd:
-        json.dump(result_arr, fd)
+        json.dump(score_dict, fd)
+    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_logits.json', 'w') as fd:
+        json.dump(logits_dict, fd)
     assert 1 == 0
+    # ===============================================================================
     rank, _ = get_dist_info()
     if rank == 0:
         if output_config.get('out', None):

@@ -108,6 +108,7 @@ lr_config = dict(
     warmup_by_epoch=True,
     warmup_iters=16)
 total_epochs = 58
+checkpoint_config = dict(interval=1)
 
 work_dir = './work_dirs/ircsn_ig65m_pretrained_bnfrozen_r152_32x2x1_58e_kinetics400_rgb'  # noqa: E501
 find_unused_parameters = True

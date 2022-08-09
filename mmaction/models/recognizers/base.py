@@ -263,8 +263,8 @@ class BaseRecognizer(nn.Module, metaclass=ABCMeta):
 
         # ====================================================================================
         if kwargs is not None:
-            scores = self.forward_test(imgs)
-            return [{kwargs['img_metas'][0]['frame_dir'] : scores.reshape(-1).tolist()}]
+            scores, logits = self.forward_test(imgs)
+            return [{kwargs['img_metas'][0]['frame_dir'] : [scores.cpu().numpy().reshape(-1).tolist(), logits.cpu().numpy().reshape(-1).tolist()]}]
             # return [{kwargs['img_metas'][0]['frame_dir'] : scores.tolist()}]
         # ====================================================================================
         return self.forward_test(imgs, **kwargs)
