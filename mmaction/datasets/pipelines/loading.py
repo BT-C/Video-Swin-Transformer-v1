@@ -1684,6 +1684,8 @@ class LoadProposals:
 
 # ======================================================================
 import copy
+import cv2
+
 @PIPELINES.register_module()
 class MixDecordDecode:
     """Using decord to decode the video.
@@ -1737,7 +1739,13 @@ class MixDecordDecode:
         label1 = results['label']
         label2 = another_results['label']
         
-        assert img1[0].shape[:2] == img2[0].shape[:2]
+        # assert img1[0].shape[:2] == img2[0].shape[:2]
+        if img1[0].shape[:2] != img2[0].shape[:2]:
+            img_size = img1[0].shape[:2]
+            print(img1[0].shape, img2[0].shape)
+            for j in range(len(img2)):
+                img2[j] = cv2.resize(img2[j], img_size, interpolation=cv2.INTER_LINEAR)
+
         mix_imgs = []
         row_flag = (random.random() > 0.5)
         for i in range(len(img1)):
