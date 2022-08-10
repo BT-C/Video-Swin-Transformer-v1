@@ -24,12 +24,13 @@ class Recognizer3D(BaseRecognizer):
         self.class_fc = nn.Linear(1536, 1)
 
     def wsal_pred(self, x):
-        feature_x = self.pool_2d(x) # (1, 1536, 16, 1, 1)
-        feature_x = feature_x.squeeze() # (1536, 16)
-        feature_x = self.clip_fc(feature_x) # (1536, 32) (T, D)
-        cas = self.cas_fc(feature_x.T).T # (17, 32)
-        class_vector = self.class_fc(feature_x.T) # (32, 1)
-        class_score = torch.mm(cas, class_vector).T # (1, 17)
+        feature_x = self.pool_2d(x) # (N, 1536, 16, 1, 1)
+        feature_x = feature_x.squeeze() # (N, 1536, 16)
+        feature_x = self.clip_fc(feature_x) # (N, 1536, 32) (T, D)
+        cas = self.cas_fc(feature_x.transpose(1, 2)).transpose(1, 2) # (N, 17, 32)
+        class_vector = self.class_fc(feature_x.transpose(1, 2)) # (N, 32, 1)
+        class_score = (cas @ class_vector).transpose(1, 2) # (N, 1, 17)
+        class_score = class_score.squeeze(1) # (N, 17)
 
         return class_score
 
@@ -170,10 +171,12 @@ class Recognizer3D(BaseRecognizer):
         ''' weakly-supervise action localtion '''
         wsal_cls_score = self.wsal_pred(feat)
         wsal_logits_score = wsal_cls_score.mean(dim=0, keepdim=True)
+        wsal_cls_score = self.average_clip(wsal_cls_score)
         # return cls_score.mean(dim=0)
         # -------------------------------------------------------------------
 
         cls_score = self.average_clip(cls_score, num_segs)
+        # return cls_score, logits_score
         return cls_score, logits_score, wsal_cls_score, wsal_logits_score
 
     def forward_test(self, imgs):
