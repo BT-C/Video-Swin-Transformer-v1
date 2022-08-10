@@ -1,3 +1,4 @@
+from cProfile import label
 import io
 from itertools import combinations_with_replacement
 import os
@@ -1729,7 +1730,31 @@ class MixDecordDecode:
         transforms = self.datasets.pipeline.transforms
         another_results = transforms[0](another_results)
         another_results = transforms[1](another_results)
+        results = self.get_single_video(results)
         another_results = self.get_single_video(another_results)
+        img1 = results['imgs']
+        img2 = another_results['imgs']
+        label1 = results['label']
+        label2 = another_results['label']
+        
+        assert img1[0].shape[:2] == img2[0].shape[:2]
+        mix_imgs = []
+        row_flag = (random.random() > 0.5)
+        for i in range(len(img1)):
+            row1 = np.hstack((img1[i], img2[i]))
+            row2 = np.hstack((img2[i], img1[i]))
+            if row_flag:
+                temp_mix_img = np.vstack((row1, row2))
+            else:
+                temp_mix_img = np.vstack((row2, row1))
+            mix_imgs.append(temp_mix_img)
+        mix_label = ((label1 + label2) >= 1.0).float()
+        
+        results['frame_dir'] = 'mix_up_video'
+        results['imgs'] = mix_imgs
+        results['label'] = mix_label
+
+        return results
 
 
     def get_single_video(self, results):
