@@ -1704,7 +1704,7 @@ class MixDecordDecode:
         """
 
         if random.random() < 0.5:
-            # return self.single_video(results)
+            # return self.get_single_video(results)
             return self.mix_video(results)
         else:
             return self.mix_video(results)
@@ -1715,20 +1715,24 @@ class MixDecordDecode:
         
     def mix_video(self, results):
         idx = self.find_idx()
-        results = copy.deepcopy(self.datasets.video_infos[idx])
-        results['modality'] = self.dataset.modality
-        results['start_index'] = self.datasets.start_index
+        another_results = copy.deepcopy(self.datasets.video_infos[idx])
+        another_results['modality'] = self.datasets.modality
+        another_results['start_index'] = self.datasets.start_index
 
         # prepare tensor in getitem
         # If HVU, type(results['label']) is dict
-        if self.datasets.multi_class and isinstance(results['label'], list):
+        if self.datasets.multi_class and isinstance(another_results['label'], list):
             onehot = torch.zeros(self.datasets.num_classes)
-            onehot[results['label']] = 1.
-            results['label'] = onehot
+            onehot[another_results['label']] = 1.
+            another_results['label'] = onehot
 
-        return self.pipeline(results)
+        transforms = self.datasets.pipeline.transforms
+        another_results = transforms[0](another_results)
+        another_results = transforms[1](another_results)
+        another_results = self.get_single_video(another_results)
 
-    def single_video(self, results):
+
+    def get_single_video(self, results):
         container = results['video_reader']
 
         if results['frame_inds'].ndim != 1:
