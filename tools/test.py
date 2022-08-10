@@ -351,10 +351,15 @@ def main():
     # ===============================================================================
     logits_dict = {}
     score_dict = {}
+
+    wsal_score = {}
+    wsal_logits = {}
     for output in outputs:
         key = list(output)[0]
         score_dict.update({key : output[key][0]})
         logits_dict.update({key : output[key][1]})
+        wsal_score.update({key : output[key][2]})
+        wsal_logits.update({key : output[key][3]})
 
     import json
     
@@ -365,6 +370,10 @@ def main():
         json.dump(score_dict, fd)
     with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_logits.json', 'w') as fd:
         json.dump(logits_dict, fd)
+    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_wsal.json', 'w') as fd:
+        json.dump(wsal_score, fd)
+    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_wsal_logits.json', 'w') as fd:
+        json.dump(wsal_logits, fd)
     assert 1 == 0
     # ===============================================================================
     rank, _ = get_dist_info()

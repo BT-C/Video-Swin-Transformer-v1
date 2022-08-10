@@ -23,6 +23,16 @@ class Recognizer3D(BaseRecognizer):
         self.cas_fc = nn.Linear(1536, 17)
         self.class_fc = nn.Linear(1536, 1)
 
+    def wsal_pred(self, x):
+        feature_x = self.pool_2d(x) # (1, 1536, 16, 1, 1)
+        feature_x = feature_x.squeeze() # (1536, 16)
+        feature_x = self.clip_fc(feature_x) # (1536, 32) (T, D)
+        cas = self.cas_fc(feature_x.T).T # (17, 32)
+        class_vector = self.class_fc(feature_x.T) # (32, 1)
+        class_score = torch.mm(cas, class_vector).T # (1, 17)
+
+        return class_score
+
     def forward_train(self, imgs, labels, **kwargs):
         """Defines the computation performed at every call when training."""
 
@@ -36,12 +46,7 @@ class Recognizer3D(BaseRecognizer):
             losses.update(loss_aux)
 
         ''' Weakly-supervise action location'''
-        feature_x = self.pool_2d(x) # (1, 1536, 16, 1, 1)
-        feature_x = feature_x.squeeze() # (1536, 16)
-        feature_x = self.clip_fc(feature_x) # (1536, 32) (T, D)
-        cas = self.cas_fc(feature_x.T).T # (17, 32)
-        class_vector = self.class_fc(feature_x.T) # (32, 1)
-        class_score = torch.mm(cas, class_vector).T # (1, 17)
+        class_score = self.wsal_pred(x)
         import torch.nn.functional as F
         wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
         losses.update({"wsal_loss" : wsal_loss_cls})
@@ -157,11 +162,19 @@ class Recognizer3D(BaseRecognizer):
 
         # should have cls_head if not extracting features
         assert self.with_cls_head
+        ''' origin classification loss '''
         cls_score = self.cls_head(feat)
+        # -------------------------------------------------------------------
         logits_score = cls_score.mean(dim=0, keepdim=True)
+
+        ''' weakly-supervise action localtion '''
+        wsal_cls_score = self.wsal_pred(feat)
+        wsal_logits_score = wsal_cls_score.mean(dim=0, keepdim=True)
         # return cls_score.mean(dim=0)
+        # -------------------------------------------------------------------
+
         cls_score = self.average_clip(cls_score, num_segs)
-        return cls_score, logits_score
+        return cls_score, logits_score, wsal_cls_score, wsal_logits_score
 
     def forward_test(self, imgs):
         """Defines the computation performed at every call when evaluation and
