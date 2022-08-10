@@ -1685,6 +1685,7 @@ class LoadProposals:
 # ======================================================================
 import copy
 import cv2
+import json
 
 @PIPELINES.register_module()
 class MixDecordDecode:
@@ -1698,6 +1699,15 @@ class MixDecordDecode:
     self.datasets = UrbanPipe Datasets
     """
 
+    # def __init__(self):
+        # label_count = [0 for _ in range(17)]
+        # ann_file = "/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/train.json"
+        # ann_dict = json.load(open(ann_file, 'r'))
+        # for key in ann_dict:
+        #     labels = ann_dict[key] 
+        #     for label in labels:
+        #         label_count[label] += 1
+        
     def __call__(self, results):
         """Perform the Decord decoding.
 
@@ -1713,7 +1723,8 @@ class MixDecordDecode:
             return self.mix_video(results)
     
     def find_idx(self):
-        idx = 0
+        length = len(self.datasets.video_infos)
+        idx = int(random.random() * length)
         return idx
         
     def mix_video(self, results):
@@ -1741,10 +1752,11 @@ class MixDecordDecode:
         
         # assert img1[0].shape[:2] == img2[0].shape[:2]
         if img1[0].shape[:2] != img2[0].shape[:2]:
-            img_size = img1[0].shape[:2]
-            print(img1[0].shape, img2[0].shape)
+            img_size = (img1[0].shape[1], img1[0].shape[0])
+            # print(img1[0].shape, img2[0].shape)
             for j in range(len(img2)):
                 img2[j] = cv2.resize(img2[j], img_size, interpolation=cv2.INTER_LINEAR)
+        # print(img1[0].shape, img2[0].shape)
 
         mix_imgs = []
         row_flag = (random.random() > 0.5)
@@ -1757,7 +1769,7 @@ class MixDecordDecode:
                 temp_mix_img = np.vstack((row2, row1))
             mix_imgs.append(temp_mix_img)
         mix_label = ((label1 + label2) >= 1.0).float()
-        
+
         results['frame_dir'] = 'mix_up_video'
         results['imgs'] = mix_imgs
         results['label'] = mix_label
