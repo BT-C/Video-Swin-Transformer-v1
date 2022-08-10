@@ -13,7 +13,10 @@ model = dict(
         drop_rate=0.0,
         attn_drop_rate=0.0,
         drop_path_rate=0.3,
-        patch_norm=True),
+        patch_norm=True,
+        pretrained=
+        '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_large_patch4_window12_384_22k.pth'
+    ),
     cls_head=dict(
         type='UrbanPipeI3DHead',
         in_channels=1536,
@@ -25,7 +28,7 @@ checkpoint_config = dict(interval=1)
 log_config = dict(interval=20, hooks=[dict(type='TextLoggerHook')])
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-load_from = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v6-swin-large/v2/epoch_100.pth'
+load_from = None
 resume_from = None
 workflow = [('train', 1)]
 dataset_type = 'UrbanPipe'
