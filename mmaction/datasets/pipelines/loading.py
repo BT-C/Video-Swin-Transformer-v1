@@ -1717,8 +1717,8 @@ class MixDecordDecode:
         """
 
         if random.random() < 0.5:
-            # return self.get_single_video(results)
-            return self.mix_video(results)
+            return self.get_single_video(results)
+            # return self.mix_video(results)
         else:
             return self.mix_video(results)
     
@@ -1773,6 +1773,8 @@ class MixDecordDecode:
         results['frame_dir'] = 'mix_up_video'
         results['imgs'] = mix_imgs
         results['label'] = mix_label
+        results['original_shape'] = mix_imgs[0].shape[:2]
+        results['img_shape'] = mix_imgs[0].shape[:2]
 
         return results
 
