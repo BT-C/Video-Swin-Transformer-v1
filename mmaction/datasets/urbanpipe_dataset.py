@@ -32,9 +32,9 @@ class UrbanPipe(BaseDataset):
         self.filename_tmpl = filename_tmpl
 
         from mmaction.datasets.pipelines.loading import MixDecordDecode
-        for t in self.transforms:
+        for i, t in enumerate(self.pipeline.transforms):
             if type(t) == MixDecordDecode:
-                t.datasets = self
+                self.pipeline.transforms[i].datasets = self
                 # results = copy.deepcopy(self.video_infos[idx])
                 # results['modality'] = self.modality
                 # results['start_index'] = self.start_index

@@ -1682,6 +1682,7 @@ class LoadProposals:
 
 
 # ======================================================================
+
 @PIPELINES.register_module()
 class MixDecordDecode:
     """Using decord to decode the video.
@@ -1690,6 +1691,8 @@ class MixDecordDecode:
 
     Required keys are "video_reader", "filename" and "frame_inds",
     added or modified keys are "imgs" and "original_shape".
+
+    self.datasets = UrbanPipe Datasets
     """
 
     def __call__(self, results):
@@ -1699,6 +1702,16 @@ class MixDecordDecode:
             results (dict): The resulting dict to be modified and passed
                 to the next transform in pipeline.
         """
+
+        if random.random() < 0.5:
+            return self.single_video(results)
+        else:
+            return self.mix_video(results)
+        
+    def mix_video(self, results):
+        pass
+
+    def single_video(self, results):
         container = results['video_reader']
 
         if results['frame_inds'].ndim != 1:
