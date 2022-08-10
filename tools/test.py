@@ -348,7 +348,7 @@ def main():
     else:
         outputs = inference_pytorch(args, cfg, distributed, data_loader)
 
-    # ===============================================================================
+    # ===========================================================================
     logits_dict = {}
     score_dict = {}
 
@@ -374,8 +374,8 @@ def main():
         json.dump(wsal_score, fd)
     with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_wsal_logits.json', 'w') as fd:
         json.dump(wsal_logits, fd)
-    assert 1 == 0
-    # ===============================================================================
+    assert 0 == 1
+    # ===========================================================================
     rank, _ = get_dist_info()
     if rank == 0:
         if output_config.get('out', None):
