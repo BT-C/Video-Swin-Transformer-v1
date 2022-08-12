@@ -1885,7 +1885,7 @@ class MixTimeDecordDecode:
 
         mix_imgs = []
         order_flag = (random.random() > 0.5)
-        clip_length = img1.shape[0]
+        clip_length = len(img1)
         mid_length = clip_length // 2
         if random.random() > 0.5:
             img1 = img1[:mid_length]
