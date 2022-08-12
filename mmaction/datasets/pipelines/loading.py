@@ -1846,8 +1846,8 @@ class MixTimeDecordDecode:
         length = len(self.datasets.video_infos)
         idx = int(random.random() * length)
         return idx
-        
-    def mix_video(self, results):
+
+    def get_another_video(self):
         idx = self.find_idx()
         another_results = copy.deepcopy(self.datasets.video_infos[idx])
         another_results['modality'] = self.datasets.modality
@@ -1863,6 +1863,11 @@ class MixTimeDecordDecode:
         transforms = self.datasets.pipeline.transforms
         another_results = transforms[0](another_results)
         another_results = transforms[1](another_results)
+
+        return another_results
+        
+    def mix_video(self, results):
+        another_results = self.get_another_video()
         results = self.get_single_video(results)
         another_results = self.get_single_video(another_results)
         img1 = results['imgs']
@@ -1879,15 +1884,25 @@ class MixTimeDecordDecode:
         # print(img1[0].shape, img2[0].shape)
 
         mix_imgs = []
-        row_flag = (random.random() > 0.5)
-        for i in range(len(img1)):
-            row1 = np.hstack((img1[i], img2[i]))
-            row2 = np.hstack((img2[i], img1[i]))
-            if row_flag:
-                temp_mix_img = np.vstack((row1, row2))
-            else:
-                temp_mix_img = np.vstack((row2, row1))
-            mix_imgs.append(temp_mix_img)
+        order_flag = (random.random() > 0.5)
+        clip_length = img1.shape[0]
+        mid_length = clip_length // 2
+        if random.random() > 0.5:
+            img1 = img1[:mid_length]
+        else:
+            img1 = img1[mid_length:]
+        if random.random() > 0.5:
+            img2 = img2[:mid_length]
+        else:
+            img2 = img2[mid_length:]
+
+        if order_flag:
+            mix_imgs.extend(img1)
+            mix_imgs.extend(img2)
+        else:
+            mix_imgs.extend(img2)
+            mix_imgs.extend(img1)
+        assert len(mix_imgs) == clip_length
         mix_label = ((label1 + label2) >= 1.0).float()
 
         results['frame_dir'] = 'mix_up_video'

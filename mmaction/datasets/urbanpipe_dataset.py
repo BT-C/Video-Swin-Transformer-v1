@@ -32,21 +32,11 @@ class UrbanPipe(BaseDataset):
         self.filename_tmpl = filename_tmpl
 
         from mmaction.datasets.pipelines.loading import MixDecordDecode
+        from mmaction.datasets.pipelines.loading import MixTimeDecordDecode
         for i, t in enumerate(self.pipeline.transforms):
-            if type(t) == MixDecordDecode:
+            if type(t) == MixDecordDecode or  type(t) == MixTimeDecordDecode:
                 self.pipeline.transforms[i].datasets = self
-                # results = copy.deepcopy(self.video_infos[idx])
-                # results['modality'] = self.modality
-                # results['start_index'] = self.start_index
 
-                # # prepare tensor in getitem
-                # # If HVU, type(results['label']) is dict
-                # if self.multi_class and isinstance(results['label'], list):
-                #     onehot = torch.zeros(self.num_classes)
-                #     onehot[results['label']] = 1.
-                #     results['label'] = onehot
-
-                # return self.pipeline(results)
 
     def load_annotations(self):
         video_infos = []
