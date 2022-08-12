@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics400_22k.pth'
-# load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics600_22k.pth'
+load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics600_22k.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v2-pretrained/epoch_80.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v5-sigmoid/v2/epoch_100.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v5-sigmoid-momentum-score/v1/epoch_26.pth'
