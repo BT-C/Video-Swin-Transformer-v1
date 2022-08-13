@@ -29,7 +29,7 @@ log_config = dict(interval=20, hooks=[dict(type='TextLoggerHook')])
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 load_from = None
-resume_from = None
+resume_from = './Recurrent/result/v9-wsal/v2/epoch_99.pth'
 workflow = [('train', 1)]
 dataset_type = 'UrbanPipe'
 data_root = 'data/urbanpipe_data/media/sdd/zhangxuan/eccv_data_raw_video'
@@ -86,8 +86,8 @@ test_pipeline = [
         num_clips=4,
         test_mode=True),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(-1, 384)),
-    dict(type='ThreeCrop', crop_size=384),
+    dict(type='Resize', scale=(-1, 224)),
+    dict(type='ThreeCrop', crop_size=224),
     dict(type='Flip', flip_ratio=0),
     dict(
         type='Normalize',
@@ -169,8 +169,8 @@ data = dict(
                 num_clips=4,
                 test_mode=True),
             dict(type='DecordDecode'),
-            dict(type='Resize', scale=(-1, 384)),
-            dict(type='ThreeCrop', crop_size=384),
+            dict(type='Resize', scale=(-1, 224)),
+            dict(type='ThreeCrop', crop_size=224),
             dict(type='Flip', flip_ratio=0),
             dict(
                 type='Normalize',

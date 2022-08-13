@@ -16,16 +16,16 @@ class Recognizer3D(BaseRecognizer):
                  train_cfg=None,
                  test_cfg=None):
         super(Recognizer3D, self).__init__(backbone, cls_head, neck, train_cfg, test_cfg)
-        # self.momentum_score = torch.zeros((1, 17))
-        # self.momentum_alpha = 0.9
-        # self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
-        # self.clip_fc = nn.Linear(16, 32)
-        # self.cas_fc = nn.Linear(1536, 17)
-        # self.class_fc = nn.Linear(1536, 1)
+        self.momentum_score = torch.zeros((1, 17))
+        self.momentum_alpha = 0.9
+        self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
+        self.clip_fc = nn.Linear(16, 32)
+        self.cas_fc = nn.Linear(1536, 17)
+        self.class_fc = nn.Linear(1536, 1)
 
     def wsal_pred(self, x):
         feature_x = self.pool_2d(x) # (N, 1536, 16, 1, 1)
-        feature_x = feature_x.squeeze() # (N, 1536, 16)
+        feature_x = feature_x.squeeze(-1).squeeze(-1) # (N, 1536, 16)
         feature_x = self.clip_fc(feature_x) # (N, 1536, 32) (T, D)
         cas = self.cas_fc(feature_x.transpose(1, 2)).transpose(1, 2) # (N, 17, 32)
         class_vector = self.class_fc(feature_x.transpose(1, 2)) # (N, 32, 1)
@@ -33,6 +33,11 @@ class Recognizer3D(BaseRecognizer):
         class_score = class_score.squeeze(1) # (N, 17)
 
         return class_score
+
+    def wsal_pred_label(self, x):
+        class_score = self.wsal_pred(x)
+        index = torch.where(class_score > 0)[1]
+
 
     def forward_train(self, imgs, labels, **kwargs):
         """Defines the computation performed at every call when training."""

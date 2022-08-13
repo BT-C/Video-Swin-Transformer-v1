@@ -366,9 +366,9 @@ def main():
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_focal_32_100.json', 'w') as fd:
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_32_95.json', 'w') as fd:
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_160_87.json', 'w') as fd:
-    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result.json', 'w') as fd:
+    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_mix.json', 'w') as fd:
         json.dump(score_dict, fd)
-    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_logits.json', 'w') as fd:
+    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_logits_mix.json', 'w') as fd:
         json.dump(logits_dict, fd)
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/test_result_wsal.json', 'w') as fd:
     #     json.dump(wsal_score, fd)
