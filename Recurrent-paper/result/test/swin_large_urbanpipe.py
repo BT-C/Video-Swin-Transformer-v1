@@ -29,7 +29,7 @@ log_config = dict(interval=20, hooks=[dict(type='TextLoggerHook')])
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 load_from = None
-resume_from = './Recurrent/result/v9-wsal/v2/epoch_99.pth'
+resume_from = None
 workflow = [('train', 1)]
 dataset_type = 'UrbanPipe'
 data_root = 'data/urbanpipe_data/media/sdd/zhangxuan/eccv_data_raw_video'

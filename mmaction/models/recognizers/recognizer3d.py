@@ -4,6 +4,7 @@ from torch import nn
 from ..builder import RECOGNIZERS
 from .base import BaseRecognizer
 
+import torch.nn.functional as F
 
 @RECOGNIZERS.register_module()
 class Recognizer3D(BaseRecognizer):
@@ -16,12 +17,12 @@ class Recognizer3D(BaseRecognizer):
                  train_cfg=None,
                  test_cfg=None):
         super(Recognizer3D, self).__init__(backbone, cls_head, neck, train_cfg, test_cfg)
-        self.momentum_score = torch.zeros((1, 17))
-        self.momentum_alpha = 0.9
-        self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
-        self.clip_fc = nn.Linear(16, 32)
-        self.cas_fc = nn.Linear(1536, 17)
-        self.class_fc = nn.Linear(1536, 1)
+        # self.momentum_score = torch.zeros((1, 17))
+        # self.momentum_alpha = 0.9
+        # self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
+        # self.clip_fc = nn.Linear(16, 32)
+        # self.cas_fc = nn.Linear(1536, 17)
+        # self.class_fc = nn.Linear(1536, 1)
 
     def wsal_pred(self, x):
         feature_x = self.pool_2d(x) # (N, 1536, 16, 1, 1)
@@ -32,13 +33,31 @@ class Recognizer3D(BaseRecognizer):
         class_score = (cas @ class_vector).transpose(1, 2) # (N, 1, 17)
         class_score = class_score.squeeze(1) # (N, 17)
 
-        return class_score
+        return class_score, cas
 
-    def wsal_pred_label(self, x):
-        class_score = self.wsal_pred(x)
-        index = torch.where(class_score > 0)[1]
-
-
+    def wsal_pred_label(self, x, imgs, labels, losses):
+        all_frame_num = imgs.shape[2]
+        class_score, cas = self.wsal_pred(x)
+        index_list = torch.where(class_score > 0)[1]
+        single_label_loss = 0
+        for index in index_list:
+            if labels[0, index] != 1:
+                continue
+            frame_list = cas[:, index].squeeze()
+            frame_index = (frame_list > 0)
+            frame_img = imgs[:, :, frame_index, :, :]
+            num_frame = frame_index.sum()
+            up_sample_imgs = nn.Upsample(scale_factor=all_frame_num / num_frame, mode='trilinear')
+            assert up_sample_imgs.shape == imgs.shape
+            x = self.extract_feat(up_sample_imgs)
+            cls_score = self.cls_head(x)
+            single_label = F.one_hot(index, num_classes=17)
+            backup_kwargs = {}
+            loss_cls = self.cls_head.loss(cls_score, single_label, **backup_kwargs)
+            single_label_loss += loss_cls['loss_cls']
+        losses.update({"single_label_loss" : single_label_loss})
+            
+            
     def forward_train(self, imgs, labels, **kwargs):
         """Defines the computation performed at every call when training."""
 
@@ -56,7 +75,6 @@ class Recognizer3D(BaseRecognizer):
         # import torch.nn.functional as F
         # wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
         # losses.update({"wsal_loss" : wsal_loss_cls})
-
 
         ''' GCN '''
         # feature = self.cls_head.avg_pool(x)

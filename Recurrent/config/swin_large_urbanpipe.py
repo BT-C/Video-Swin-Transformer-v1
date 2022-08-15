@@ -29,8 +29,8 @@ dataset_type = 'UrbanPipe'
 data_root = 'data/urbanpipe_data/media/sdd/zhangxuan/eccv_data_raw_video'
 data_root_val = 'data/urbanpipe_data/media/sdd/zhangxuan/eccv_data_raw_video'
 ann_file_train = 'data/urbanpipe/train.json'
-# ann_file_test = 'data/urbanpipe/test.json'
-ann_file_test = 'data/urbanpipe/development.json'
+ann_file_test = 'data/urbanpipe/test.json'
+# ann_file_test = 'data/urbanpipe/development.json'
 ann_file_val = ann_file_train
 # ann_file_test = ann_file_train
 img_norm_cfg = dict(
@@ -42,6 +42,7 @@ train_pipeline = [
     dict(type='Resize', scale=(-1, 256)),
     dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    # dict(type='Resize', scale=(448, 448), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
