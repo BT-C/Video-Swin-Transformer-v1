@@ -46,7 +46,7 @@ class Recognizer3D(BaseRecognizer):
                 continue
             length += 1
             frame_list = cas[:, index].squeeze()
-            frame_index = (frame_list > 0)
+            frame_index = (frame_list > -0.1)
             frame_img = imgs[:, :, frame_index, :, :]
             num_frame = frame_index.sum()
             upsample_util = nn.Upsample(scale_factor=(all_frame_num / num_frame, 1, 1), mode='trilinear')
@@ -56,9 +56,9 @@ class Recognizer3D(BaseRecognizer):
             cls_score = self.cls_head(x)
             single_label = F.one_hot(index, num_classes=17)
             backup_kwargs = {}
-            loss_cls = self.cls_head.loss(cls_score, single_label, **backup_kwargs)
+            loss_cls = self.cls_head.loss(cls_score, single_label.detach(), **backup_kwargs)
             single_label_loss += loss_cls['loss_cls']
-        return single_label_loss / length
+        return single_label_loss * weight / length
             
     def forward_train(self, imgs, labels, **kwargs):
         """Defines the computation performed at every call when training."""
@@ -73,13 +73,13 @@ class Recognizer3D(BaseRecognizer):
             losses.update(loss_aux)
 
         ''' Weakly-supervise action location'''
-        # class_score = self.wsal_pred(x)
-        # import torch.nn.functional as F
-        # wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
-        # losses.update({"wsal_loss" : wsal_loss_cls})
+        class_score = self.wsal_pred(x)
+        import torch.nn.functional as F
+        wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
+        losses.update({"wsal_loss" : wsal_loss_cls})
 
         ''' Weakly-supervise action location single frame label '''
-        single_label_loss = self.wsal_pred_label(x, weight=0.1)
+        single_label_loss = self.wsal_pred_label(x, imgs, labels, weight=1)
         losses.update({"single_label_loss" : single_label_loss})
 
         ''' GCN '''
