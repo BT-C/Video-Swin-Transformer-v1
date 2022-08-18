@@ -9,6 +9,7 @@ _base_ = [
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v5-sigmoid-momentum-score/v1/epoch_26.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/swin_large_patch4_window12_384_22k.pth'
 # load_from = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v6-swin-large/v2/epoch_100.pth'
+load_from = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v9-wsal/v2/epoch_100.pth'
 model=dict(
     backbone=dict(
         # pretrained='https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window877_kinetics600_22k.pth',
@@ -38,10 +39,11 @@ img_norm_cfg = dict(
 train_pipeline = [
     dict(type='DecordInit'),
     dict(type='SampleFrames', clip_len=32, frame_interval=2, num_clips=1),
-    dict(type='MixDecordDecode'),
+    dict(type='DecordDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    # dict(type='Resize', scale=(448, 448), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
@@ -76,10 +78,10 @@ test_pipeline = [
         num_clips=4,
         test_mode=True),
     dict(type='DecordDecode'),
-    # dict(type='Resize', scale=(-1, 224)),
-    # dict(type='ThreeCrop', crop_size=224),
-    dict(type='Resize', scale=(-1, 384)),
-    dict(type='ThreeCrop', crop_size=384),
+    dict(type='Resize', scale=(-1, 224)),
+    dict(type='ThreeCrop', crop_size=224),
+    # dict(type='Resize', scale=(-1, 384)),
+    # dict(type='ThreeCrop', crop_size=384),
     dict(type='Flip', flip_ratio=0),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
@@ -117,7 +119,7 @@ evaluation = dict(
     interval=1, metrics=['top_k_accuracy', 'mean_class_accuracy'])
 
 # optimizer
-optimizer = dict(type='AdamW', lr=1e-3, betas=(0.9, 0.999), weight_decay=0.05,
+optimizer = dict(type='AdamW', lr=1e-4, betas=(0.9, 0.999), weight_decay=0.05,
                  paramwise_cfg=dict(custom_keys={'absolute_pos_embed': dict(decay_mult=0.),
                                                  'relative_position_bias_table': dict(decay_mult=0.),
                                                  'norm': dict(decay_mult=0.),
@@ -130,7 +132,7 @@ lr_config = dict(
     warmup_by_epoch=True,
     warmup_iters=2.5
 )
-total_epochs = 100
+total_epochs = 30
 
 # runtime settings
 checkpoint_config = dict(interval=1)

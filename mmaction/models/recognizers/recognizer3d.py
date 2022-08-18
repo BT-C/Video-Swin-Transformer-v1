@@ -17,12 +17,12 @@ class Recognizer3D(BaseRecognizer):
                  train_cfg=None,
                  test_cfg=None):
         super(Recognizer3D, self).__init__(backbone, cls_head, neck, train_cfg, test_cfg)
-        # self.momentum_score = torch.zeros((1, 17))
-        # self.momentum_alpha = 0.9
-        # self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
-        # self.clip_fc = nn.Linear(16, 32)
-        # self.cas_fc = nn.Linear(1536, 17)
-        # self.class_fc = nn.Linear(1536, 1)
+        self.momentum_score = torch.zeros((1, 17))
+        self.momentum_alpha = 0.9
+        self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
+        self.clip_fc = nn.Linear(16, 32)
+        self.cas_fc = nn.Linear(1536, 17)
+        self.class_fc = nn.Linear(1536, 1)
 
     def wsal_pred(self, x):
         feature_x = self.pool_2d(x) # (N, 1536, 16, 1, 1)
@@ -38,19 +38,35 @@ class Recognizer3D(BaseRecognizer):
     def wsal_pred_label(self, x, imgs, labels, weight=1e-2):
         all_frame_num = imgs.shape[2]
         class_score, cas = self.wsal_pred(x)
-        index_list = torch.where(class_score > 0)[1]
+        # index_list = torch.where(class_score > 0)[1]
+        index_list = torch.where(labels == 1)[1]
         single_label_loss = 0
         length = 0
+        # if len(index_list) == 0:
+        #     print(len(index_list), labels.sum())
+
         for index in index_list:
-            if labels[0, index] != 1:
-                continue
+            # if labels[0, index] != 1:
+            #     continue
             length += 1
+            ''' for CUDA out of memory '''
+            if length == 3:
+                break
+
             frame_list = cas[:, index].squeeze()
-            frame_index = (frame_list > -0.1)
-            frame_img = imgs[:, :, frame_index, :, :]
+            init_thr = 0.
+            frame_index = (frame_list > init_thr)
             num_frame = frame_index.sum()
-            upsample_util = nn.Upsample(scale_factor=(all_frame_num / num_frame, 1, 1), mode='trilinear')
-            up_sample_imgs = upsample_util(frame_img)
+            # print(num_frame, end=' ')
+            while frame_index.sum() == 0:
+                init_thr -= 0.1
+                frame_index = (frame_list > init_thr)
+            frame_img = imgs[:, :, frame_index, :, :]
+            # print(frame_index.sum())
+            
+            # upsample_util = nn.Upsample(scale_factor=(all_frame_num / num_frame, 1, 1), mode='trilinear')
+            # up_sample_imgs = upsample_util(frame_img)
+            up_sample_imgs = F.interpolate(frame_img, imgs.shape[-3:], mode='trilinear')
             assert up_sample_imgs.shape == imgs.shape
             x = self.extract_feat(up_sample_imgs)
             cls_score = self.cls_head(x)
@@ -58,6 +74,8 @@ class Recognizer3D(BaseRecognizer):
             backup_kwargs = {}
             loss_cls = self.cls_head.loss(cls_score, single_label.detach(), **backup_kwargs)
             single_label_loss += loss_cls['loss_cls']
+        # if length == 0:
+        #     return -1
         return single_label_loss * weight / length
             
     def forward_train(self, imgs, labels, **kwargs):
@@ -73,14 +91,15 @@ class Recognizer3D(BaseRecognizer):
             losses.update(loss_aux)
 
         ''' Weakly-supervise action location'''
-        # class_score = self.wsal_pred(x)
-        # import torch.nn.functional as F
-        # wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
-        # losses.update({"wsal_loss" : wsal_loss_cls})
+        class_score = self.wsal_pred(x)[0]
+        import torch.nn.functional as F
+        wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
+        losses.update({"wsal_loss" : wsal_loss_cls})
 
         ''' Weakly-supervise action location single frame label '''
-        # single_label_loss = self.wsal_pred_label(x, imgs, labels, weight=1)
-        # losses.update({"single_label_loss" : single_label_loss})
+        single_label_loss = self.wsal_pred_label(x, imgs, labels, weight=5e-2)
+        # if single_label_loss != -1:
+        losses.update({"single_label_loss" : single_label_loss})
 
         ''' GCN '''
         # feature = self.cls_head.avg_pool(x)
