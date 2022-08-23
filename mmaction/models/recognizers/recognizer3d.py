@@ -40,12 +40,16 @@ class Recognizer3D(BaseRecognizer):
         class_score, cas = self.wsal_pred(x)
         # index_list = torch.where(class_score > 0)[1]
         index_list = torch.where(labels == 1)[1]
+        
         single_label_loss = 0
         length = 0
         # if len(index_list) == 0:
         #     print(len(index_list), labels.sum())
 
-        for index in index_list:
+        # for index in index_list:
+        for i in range(len(index_list) - 1, -1, -1):
+            index = index_list[i]
+            # print(index)
             # if labels[0, index] != 1:
             #     continue
             length += 1
@@ -132,6 +136,7 @@ class Recognizer3D(BaseRecognizer):
         backup_kwargs = {}
         # loss_cls = self.cls_head.loss(cls_score, gt_labels, **kwargs)
         loss_cls = self.cls_head.loss(cls_score, gt_labels, **backup_kwargs)
+        print('-' * 30, loss_cls, gt_labels)
         losses.update(loss_cls)
 
         return losses
