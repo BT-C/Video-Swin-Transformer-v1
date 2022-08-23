@@ -47,7 +47,7 @@ train_pipeline = [
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs', 'label'], meta_keys=[]),
+    dict(type='Collect', keys=['imgs', 'label'], meta_keys=['frame_dir']),
     dict(type='ToTensor', keys=['imgs', 'label'])
 ]
 val_pipeline = [
@@ -132,7 +132,7 @@ lr_config = dict(
     warmup_by_epoch=True,
     warmup_iters=2.5
 )
-total_epochs = 60
+total_epochs = 1
 
 # runtime settings
 checkpoint_config = dict(interval=1)

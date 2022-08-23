@@ -194,6 +194,10 @@ def main():
         timestamp=timestamp,
         meta=meta)
 
+    import json
+    bad_path = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/bad-data/result.json'
+    with open(bad_path, 'w') as fd:
+        json.dump(model.output_record, fd)
 
 if __name__ == '__main__':
     main()
