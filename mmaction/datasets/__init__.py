@@ -17,6 +17,7 @@ from .rawvideo_dataset import RawVideoDataset
 from .ssn_dataset import SSNDataset
 from .video_dataset import VideoDataset
 from .urbanpipe_dataset import UrbanPipe
+from .urbanpipe_dataset_frame import UrbanPipeFrame
 
 __all__ = [
     'VideoDataset', 'build_dataloader', 'build_dataset', 'RepeatDataset',
@@ -24,5 +25,5 @@ __all__ = [
     'HVUDataset', 'AudioDataset', 'AudioFeatureDataset', 'ImageDataset',
     'RawVideoDataset', 'AVADataset', 'AudioVisualDataset',
     'BaseMiniBatchBlending', 'CutmixBlending', 'MixupBlending', 'LabelSmoothing', 'DATASETS',
-    'PIPELINES', 'BLENDINGS', 'PoseDataset', 'UrbanPipe'
+    'PIPELINES', 'BLENDINGS', 'PoseDataset', 'UrbanPipe', 'UrbanPipeFrame'
 ]
