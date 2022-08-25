@@ -9,20 +9,33 @@ _base_ = [
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v5-sigmoid-momentum-score/v1/epoch_26.pth'
 # load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/swin_large_patch4_window12_384_22k.pth'
 # load_from = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v6-swin-large/v2/epoch_100.pth'
-load_from = '/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/v9-wsal/v2/epoch_100.pth'
+
+# model=dict(
+#     backbone=dict(
+#         # pretrained='https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window877_kinetics600_22k.pth',
+#         # pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics600_22k.pth',
+#         # pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics400_22k.pth',
+#         pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_large_patch4_window12_384_22k.pth',
+#         patch_size=(2,4,4), drop_path_rate=0.3
+#     ), 
+#     test_cfg=dict(max_testing_views=4)
+# )
+
+checkpoint_file = 'https://download.openmmlab.com/mmclassification/v0/convnext/downstream/convnext-tiny_3rdparty_32xb128-noema_in1k_20220301-795e9634.pth'  # noqa
 model=dict(
     backbone=dict(
-        # pretrained='https://github.com/SwinTransformer/storage/releases/download/v1.0.4/swin_base_patch244_window877_kinetics600_22k.pth',
-        # pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics600_22k.pth',
-        # pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_base_patch244_window877_kinetics400_22k.pth',
-        pretrained='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/weight/swin_large_patch4_window12_384_22k.pth',
-        patch_size=(2,4,4), drop_path_rate=0.3
-    ), 
-    # train_cfg=dict(
-    #     blending=dict(type='MixupBlending', num_classes=1, alpha=.2)),
-    test_cfg=dict(max_testing_views=4)
+        _delete_=True,
+        type='mmcls.ConvNeXt',
+        arch='tiny',
+        out_indices=[0, 1, 2, 3],
+        drop_path_rate=0.4,
+        layer_scale_init_value=1.0,
+        gap_before_final_norm=False,
+        init_cfg=dict(
+            type='Pretrained', checkpoint=checkpoint_file,
+            prefix='backbone.')),
 )
-# load_from='/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/test/epoch_30.pth'
+
 
 # dataset settings
 # dataset_type = 'VideoDataset'
@@ -47,7 +60,7 @@ train_pipeline = [
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs', 'label'], meta_keys=['frame_dir']),
+    dict(type='Collect', keys=['imgs', 'label'], meta_keys=[]),
     dict(type='ToTensor', keys=['imgs', 'label'])
 ]
 val_pipeline = [
@@ -119,7 +132,7 @@ evaluation = dict(
     interval=1, metrics=['top_k_accuracy', 'mean_class_accuracy'])
 
 # optimizer
-optimizer = dict(type='AdamW', lr=1e-4, betas=(0.9, 0.999), weight_decay=0.05,
+optimizer = dict(type='AdamW', lr=1e-3, betas=(0.9, 0.999), weight_decay=0.05,
                  paramwise_cfg=dict(custom_keys={'absolute_pos_embed': dict(decay_mult=0.),
                                                  'relative_position_bias_table': dict(decay_mult=0.),
                                                  'norm': dict(decay_mult=0.),
@@ -132,7 +145,7 @@ lr_config = dict(
     warmup_by_epoch=True,
     warmup_iters=2.5
 )
-total_epochs = 60
+total_epochs = 100
 
 # runtime settings
 checkpoint_config = dict(interval=1)

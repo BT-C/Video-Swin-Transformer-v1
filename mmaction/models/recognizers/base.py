@@ -276,7 +276,8 @@ class BaseRecognizer(nn.Module, metaclass=ABCMeta):
 
             # scores, logits = self.forward_test(imgs)
             # return [{
-            #         kwargs['img_metas'][0]['frame_dir'] : [scores.cpu().numpy().reshape(-1).tolist(), 
+            #         kwargs['img_metas'][0]['frame_dir'] : [
+            #             scores.cpu().numpy().reshape(-1).tolist(), 
             #             logits.cpu().numpy().reshape(-1).tolist()
             #         ]
             #     }]

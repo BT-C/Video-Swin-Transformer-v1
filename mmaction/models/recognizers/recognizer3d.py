@@ -1,3 +1,4 @@
+from cProfile import label
 import torch
 from torch import nn
 
@@ -36,6 +37,32 @@ class Recognizer3D(BaseRecognizer):
 
         return class_score, cas
 
+    def class_frame(self, cas, imgs, index, sample_flag=True):
+        frame_list = cas[:, index].squeeze()
+        init_thr = 0.
+        frame_index = (frame_list > init_thr)
+        num_frame = frame_index.sum()
+        # print(num_frame, end=' ')
+        while frame_index.sum() == 0:
+            init_thr -= 0.1
+            frame_index = (frame_list > init_thr)
+        frame_img = imgs[:, :, frame_index, :, :]
+        # print(frame_index.sum())
+        
+        # upsample_util = nn.Upsample(scale_factor=(all_frame_num / num_frame, 1, 1), mode='trilinear')
+        # up_sample_imgs = upsample_util(frame_img)
+        up_sample_imgs = F.interpolate(frame_img, imgs.shape[-3:], mode='trilinear')
+        assert up_sample_imgs.shape == imgs.shape
+        x = self.extract_feat(up_sample_imgs)
+        cls_score = self.cls_head(x)
+        # single_label = F.one_hot(index, num_classes=17)
+        single_label = torch.tensor([1]) if sample_flag else torch.tensor([0])
+        single_label = single_label.to(cls_score.device)
+        backup_kwargs = {}
+        loss_cls = self.cls_head.loss(cls_score[:, index], single_label.detach(), **backup_kwargs)
+
+        return loss_cls
+
     def wsal_pred_label(self, x, imgs, labels, weight=1e-2):
         all_frame_num = imgs.shape[2]
         class_score, cas = self.wsal_pred(x)
@@ -44,10 +71,6 @@ class Recognizer3D(BaseRecognizer):
         
         single_label_loss = 0
         length = 0
-        # if len(index_list) == 0:
-        #     print(len(index_list), labels.sum())
-
-        # for index in index_list:
         for i in range(len(index_list) - 1, -1, -1):
             index = index_list[i]
             # print(index)
@@ -55,32 +78,28 @@ class Recognizer3D(BaseRecognizer):
             #     continue
             length += 1
             ''' for CUDA out of memory '''
-            if length == 3:
+            if length == 2:
                 break
 
-            frame_list = cas[:, index].squeeze()
-            init_thr = 0.
-            frame_index = (frame_list > init_thr)
-            num_frame = frame_index.sum()
-            # print(num_frame, end=' ')
-            while frame_index.sum() == 0:
-                init_thr -= 0.1
-                frame_index = (frame_list > init_thr)
-            frame_img = imgs[:, :, frame_index, :, :]
-            # print(frame_index.sum())
-            
-            # upsample_util = nn.Upsample(scale_factor=(all_frame_num / num_frame, 1, 1), mode='trilinear')
-            # up_sample_imgs = upsample_util(frame_img)
-            up_sample_imgs = F.interpolate(frame_img, imgs.shape[-3:], mode='trilinear')
-            assert up_sample_imgs.shape == imgs.shape
-            x = self.extract_feat(up_sample_imgs)
-            cls_score = self.cls_head(x)
-            single_label = F.one_hot(index, num_classes=17)
-            backup_kwargs = {}
-            loss_cls = self.cls_head.loss(cls_score, single_label.detach(), **backup_kwargs)
+            loss_cls = self.class_frame(cas, imgs, index, sample_flag=True)
             single_label_loss += loss_cls['loss_cls']
         # if length == 0:
         #     return -1
+
+        sort_index = torch.argsort(class_score).squeeze()
+        count = 0
+        for i in range(len(sort_index) - 1, -1, -1):
+            if sort_index[i] in index_list or count == 2:
+                continue
+            count += 1
+            length += 1
+            index = sort_index[i]
+            if count == 2:
+                break
+
+            loss_cls = self.class_frame(cas, imgs, index, sample_flag=False)
+            single_label_loss += loss_cls['loss_cls']
+
         return single_label_loss * weight / length
             
     def forward_train(self, imgs, labels, **kwargs):
@@ -139,14 +158,14 @@ class Recognizer3D(BaseRecognizer):
         loss_cls = self.cls_head.loss(cls_score, gt_labels, **backup_kwargs)
         # print('-' * 30, loss_cls, gt_labels)
         losses.update(loss_cls)
-        self.output_record.append(
-            {
-                'frame_dir' : kwargs['frame_dir'],
-                'cls_loss' : loss_cls['loss_cls'].item(),
-                'cls_score' : cls_score.detach().clone().squeeze().cpu().numpy().tolist(),
-                'gt_label' : gt_labels.detach().clone().squeeze().cpu().numpy().tolist(),
-            }
-        )
+        # self.output_record.append(
+        #     {
+        #         'frame_dir' : kwargs['frame_dir'],
+        #         'cls_loss' : loss_cls['loss_cls'].item(),
+        #         'cls_score' : cls_score.detach().clone().squeeze().cpu().numpy().tolist(),
+        #         'gt_label' : gt_labels.detach().clone().squeeze().cpu().numpy().tolist(),
+        #     }
+        # )
 
         return losses
 
@@ -231,14 +250,14 @@ class Recognizer3D(BaseRecognizer):
         logits_score = cls_score.mean(dim=0, keepdim=True)
 
         ''' weakly-supervise action localtion '''
-        # wsal_cls_score = self.wsal_pred(feat)[0]
-        # wsal_logits_score = wsal_cls_score.mean(dim=0, keepdim=True)
-        # wsal_cls_score = self.average_clip(wsal_cls_score, num_segs)
+        wsal_cls_score = self.wsal_pred(feat)[0]
+        wsal_logits_score = wsal_cls_score.mean(dim=0, keepdim=True)
+        wsal_cls_score = self.average_clip(wsal_cls_score, num_segs)
         # -------------------------------------------------------------------
 
         cls_score = self.average_clip(cls_score, num_segs)
-        return cls_score, logits_score
-        # return cls_score, logits_score, wsal_cls_score, wsal_logits_score
+        # return cls_score, logits_score
+        return cls_score, logits_score, wsal_cls_score, wsal_logits_score
 
     def forward_test(self, imgs):
         """Defines the computation performed at every call when evaluation and
