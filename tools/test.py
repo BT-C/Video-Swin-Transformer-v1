@@ -354,12 +354,21 @@ def main():
 
     wsal_score = {}
     wsal_logits = {}
+    # for output in outputs:
+    #     key = list(output)[0]
+    #     score_dict.update({key : output[key][0]})
+    #     logits_dict.update({key : output[key][1]})
+    #     # wsal_score.update({key : output[key][2]})
+    #     # wsal_logits.update({key : output[key][3]})
     for output in outputs:
         key = list(output)[0]
-        score_dict.update({key : output[key][0]})
-        logits_dict.update({key : output[key][1]})
-        wsal_score.update({key : output[key][2]})
-        wsal_logits.update({key : output[key][3]})
+        if key not in score_dict:
+            score_dict[key] = []
+        if key not in logits_dict:
+            logits_dict[key] = []
+        score_dict[key].append(output[key][0])
+        logits_dict[key].append(output[key][1])
+
 
     import json
     
@@ -371,10 +380,10 @@ def main():
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/test_result_logits.json', 'w') as fd:
     with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/ensemble/ensemble-list/test_result_swinl_wsal_sample_logits.json', 'w') as fd:
         json.dump(logits_dict, fd)
-    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/test_result_wsal_samplev2.json', 'w') as fd:
-        json.dump(wsal_score, fd)
-    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/test_result_wsal_samplev2_logits.json', 'w') as fd:
-        json.dump(wsal_logits, fd)
+    # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/test_result_wsal_samplev2.json', 'w') as fd:
+    #     json.dump(wsal_score, fd)
+    # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/test_result_wsal_samplev2_logits.json', 'w') as fd:
+    #     json.dump(wsal_logits, fd)
     assert 0 == 1
     # ===========================================================================
     rank, _ = get_dist_info()

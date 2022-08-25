@@ -2008,38 +2008,10 @@ class EveryFrameSample:
         segment_id = results['segment_id']
         start_index = segment_id * self.clip_len
         end_index = (segment_id + 1) * self.clip_len
+        end_index = min(end_index, total_frames)
+        self.clip_len = end_index - start_index
+        frame_inds = np.arange(start_index, end_index)
         
-        # print(total_frames)
-        if self.frame_uniform:  # sthv2 sampling strategy
-            assert results['start_index'] == 0
-            frame_inds = self.get_seq_frames(total_frames)
-        else:
-            clip_offsets = self._sample_clips(total_frames)
-            # self.clip_len = total_frames // 4
-            frame_inds = clip_offsets[:, None] + np.arange(
-                self.clip_len)[None, :] * self.frame_interval
-            frame_inds = np.concatenate(frame_inds)
-
-            if self.temporal_jitter:
-                perframe_offsets = np.random.randint(
-                    self.frame_interval, size=len(frame_inds))
-                frame_inds += perframe_offsets
-
-            frame_inds = frame_inds.reshape((-1, self.clip_len))
-            if self.out_of_bound_opt == 'loop':
-                frame_inds = np.mod(frame_inds, total_frames)
-            elif self.out_of_bound_opt == 'repeat_last':
-                safe_inds = frame_inds < total_frames
-                unsafe_inds = 1 - safe_inds
-                last_ind = np.max(safe_inds * frame_inds, axis=1)
-                new_inds = (safe_inds * frame_inds + (unsafe_inds.T * last_ind).T)
-                frame_inds = new_inds
-            else:
-                raise ValueError('Illegal out_of_bound option.')
-
-            start_index = results['start_index']
-            frame_inds = np.concatenate(frame_inds) + start_index
-
         results['frame_inds'] = frame_inds.astype(np.int)
         results['clip_len'] = self.clip_len
         results['frame_interval'] = self.frame_interval

@@ -78,6 +78,7 @@ if not from_mmcv:
         rank, world_size = get_dist_info()
         if rank == 0:
             prog_bar = mmcv.ProgressBar(len(dataset))
+        
         for data in data_loader:
             with torch.no_grad():
                 result = model(return_loss=False, **data)

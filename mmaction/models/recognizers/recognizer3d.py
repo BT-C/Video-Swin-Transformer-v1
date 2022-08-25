@@ -250,14 +250,14 @@ class Recognizer3D(BaseRecognizer):
         logits_score = cls_score.mean(dim=0, keepdim=True)
 
         ''' weakly-supervise action localtion '''
-        wsal_cls_score = self.wsal_pred(feat)[0]
-        wsal_logits_score = wsal_cls_score.mean(dim=0, keepdim=True)
-        wsal_cls_score = self.average_clip(wsal_cls_score, num_segs)
+        # wsal_cls_score = self.wsal_pred(feat)[0]
+        # wsal_logits_score = wsal_cls_score.mean(dim=0, keepdim=True)
+        # wsal_cls_score = self.average_clip(wsal_cls_score, num_segs)
         # -------------------------------------------------------------------
 
         cls_score = self.average_clip(cls_score, num_segs)
-        # return cls_score, logits_score
-        return cls_score, logits_score, wsal_cls_score, wsal_logits_score
+        return cls_score, logits_score
+        # return cls_score, logits_score, wsal_cls_score, wsal_logits_score
 
     def forward_test(self, imgs):
         """Defines the computation performed at every call when evaluation and
