@@ -1941,4 +1941,109 @@ class MixTimeDecordDecode:
 
         return results
 
+
+
+@PIPELINES.register_module()
+class EveryFrameSample:
+    """Sample frames from the video.
+
+    Required keys are "total_frames", "start_index" , added or modified keys
+    are "frame_inds", "frame_interval" and "num_clips".
+
+    Args:
+        clip_len (int): Frames of each sampled output clip.
+        frame_interval (int): Temporal interval of adjacent sampled frames.
+            Default: 1.
+        num_clips (int): Number of clips to be sampled. Default: 1.
+        temporal_jitter (bool): Whether to apply temporal jittering.
+            Default: False.
+        twice_sample (bool): Whether to use twice sample when testing.
+            If set to True, it will sample frames with and without fixed shift,
+            which is commonly used for testing in TSM model. Default: False.
+        out_of_bound_opt (str): The way to deal with out of bounds frame
+            indexes. Available options are 'loop', 'repeat_last'.
+            Default: 'loop'.
+        test_mode (bool): Store True when building test or validation dataset.
+            Default: False.
+        start_index (None): This argument is deprecated and moved to dataset
+            class (``BaseDataset``, ``VideoDatset``, ``RawframeDataset``, etc),
+            see this: https://github.com/open-mmlab/mmaction2/pull/89.
+    """
+
+    def __init__(self,
+                 clip_len,
+                 frame_interval=1,
+                 num_clips=1,
+                 temporal_jitter=False,
+                 twice_sample=False,
+                 out_of_bound_opt='loop',
+                 test_mode=False,
+                 start_index=None,
+                 frame_uniform=False):
+
+        self.clip_len = clip_len
+        self.frame_interval = frame_interval
+        self.num_clips = num_clips
+        self.temporal_jitter = temporal_jitter
+        self.twice_sample = twice_sample
+        self.out_of_bound_opt = out_of_bound_opt
+        self.test_mode = test_mode
+        self.frame_uniform = frame_uniform
+        assert self.out_of_bound_opt in ['loop', 'repeat_last']
+
+        if start_index is not None:
+            warnings.warn('No longer support "start_index" in "SampleFrames", '
+                          'it should be set in dataset class, see this pr: '
+                          'https://github.com/open-mmlab/mmaction2/pull/89')
+
+
+    def __call__(self, results):
+        """Perform the SampleFrames loading.
+
+        Args:
+            results (dict): The resulting dict to be modified and passed
+                to the next transform in pipeline.
+        """
+        total_frames = results['total_frames']
+        segment_id = results['segment_id']
+        start_index = segment_id * self.clip_len
+        end_index = (segment_id + 1) * self.clip_len
+        
+        # print(total_frames)
+        if self.frame_uniform:  # sthv2 sampling strategy
+            assert results['start_index'] == 0
+            frame_inds = self.get_seq_frames(total_frames)
+        else:
+            clip_offsets = self._sample_clips(total_frames)
+            # self.clip_len = total_frames // 4
+            frame_inds = clip_offsets[:, None] + np.arange(
+                self.clip_len)[None, :] * self.frame_interval
+            frame_inds = np.concatenate(frame_inds)
+
+            if self.temporal_jitter:
+                perframe_offsets = np.random.randint(
+                    self.frame_interval, size=len(frame_inds))
+                frame_inds += perframe_offsets
+
+            frame_inds = frame_inds.reshape((-1, self.clip_len))
+            if self.out_of_bound_opt == 'loop':
+                frame_inds = np.mod(frame_inds, total_frames)
+            elif self.out_of_bound_opt == 'repeat_last':
+                safe_inds = frame_inds < total_frames
+                unsafe_inds = 1 - safe_inds
+                last_ind = np.max(safe_inds * frame_inds, axis=1)
+                new_inds = (safe_inds * frame_inds + (unsafe_inds.T * last_ind).T)
+                frame_inds = new_inds
+            else:
+                raise ValueError('Illegal out_of_bound option.')
+
+            start_index = results['start_index']
+            frame_inds = np.concatenate(frame_inds) + start_index
+
+        results['frame_inds'] = frame_inds.astype(np.int)
+        results['clip_len'] = self.clip_len
+        results['frame_interval'] = self.frame_interval
+        results['num_clips'] = self.num_clips
+        return results
+
 # ======================================================================
