@@ -1,3 +1,4 @@
+from cProfile import label
 import copy
 import os.path as osp
 import json
@@ -43,45 +44,42 @@ class UrbanPipeFrame(BaseDataset):
         video_infos = []
         file = json.load(open(self.ann_file, 'r'))
         flag = ('test_video_name' in file)
+
         if flag:
             file = file['test_video_name']
+            video_num_file = '/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/video_frame_num.json'
+            video_num_dict = json.load(open(video_num_file, 'r'))
+            clip_len = 32
+            for video_name in file:
+                single_frame_num = video_num_dict[video_name]
+                segment_num = single_frame_num // clip_len
+                if segment_num % clip_len != 0:
+                    segment_num += 1
+                for segment_id in range(segment_num):
+                    video_infos.append(
+                        dict(
+                            filename = osp.join(self.data_prefix, video_name),
+                            frame_dir = video_name,
+                            total_frames = video_num_dict[video_name],
+                            segment_id = segment_id,
+                            label = [0]
+                        )
+                    )
         # total_video_num = file['total_video_num']
         # video_name_list = file['test_video_name']
-        for video_name in file:
-            filename = video_name
-            video_infos.append(
-                dict(
-                    filename=osp.join(self.data_prefix, video_name),
-                    frame_dir=video_name,
-                    total_frames=-1,
-                    label=[0] if flag else file[video_name]
+        else:
+            for video_name in file:
+                filename = video_name
+                video_infos.append(
+                    dict(
+                        filename=osp.join(self.data_prefix, video_name),
+                        frame_dir=video_name,
+                        total_frames=-1,
+                        label=[0] if flag else file[video_name]
+                    )
                 )
-            )
-        # with open(self.ann_file, 'r') as fin:
-        #     for line in fin:
-        #         if line.startswith("directory"):
-        #             continue
-        #         frame_dir, total_frames, label = line.split(',')
-        #         if self.data_prefix is not None:
-        #             frame_dir = osp.join(self.data_prefix, frame_dir)
-        #         video_infos.append(
-        #             dict(
-        #                 frame_dir=frame_dir,
-        #                 total_frames=int(total_frames),
-        #                 label=int(label)))
         return video_infos
-
-    # def prepare_train_frames(self, idx):
-    #     results = copy.deepcopy(self.video_infos[idx])
-    #     results['filename_tmpl'] = self.filename_tmpl
-    #     return self.pipeline(results)
-
-    # def prepare_test_frames(self, idx):
-    #     results = copy.deepcopy(self.video_infos[idx])
-    #     results['filename_tmpl'] = self.filename_tmpl
-    #     return self.pipeline(results)
-
-    
+ 
     def prepare_test_frames(self, idx):
         """Prepare the frames for testing given the index."""
         results = copy.deepcopy(self.video_infos[idx])
