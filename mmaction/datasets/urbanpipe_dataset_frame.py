@@ -45,10 +45,10 @@ class UrbanPipeFrame(BaseDataset):
         file = json.load(open(self.ann_file, 'r'))
         flag = ('test_video_name' in file)
 
-        if not flag:
-            # file = file['test_video_name']
+        if flag:
+            file = file['test_video_name']
             video_num_file = '/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/video_frame_num.json'
-            video_num_file = '/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/video_frame_train_num.json'
+            # video_num_file = '/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/video_frame_train_num.json'
             video_num_dict = json.load(open(video_num_file, 'r'))
             clip_len = 32
             for video_name in file:
@@ -63,7 +63,7 @@ class UrbanPipeFrame(BaseDataset):
                             frame_dir = video_name,
                             total_frames = video_num_dict[video_name],
                             segment_id = segment_id,
-                            label = file[video_name]
+                            label = [0]
                         )
                     )
         # total_video_num = file['total_video_num']

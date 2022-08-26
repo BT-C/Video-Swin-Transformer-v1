@@ -256,6 +256,7 @@ class Recognizer3D(BaseRecognizer):
         # -------------------------------------------------------------------
 
         cls_score = self.average_clip(cls_score, num_segs)
+        # print(logits_score.squeeze())
         return cls_score, logits_score
         # return cls_score, logits_score, wsal_cls_score, wsal_logits_score
 

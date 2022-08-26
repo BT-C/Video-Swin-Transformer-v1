@@ -274,6 +274,9 @@ class BaseRecognizer(nn.Module, metaclass=ABCMeta):
             #         ]
             #     }]
 
+            # print()
+            # print(kwargs['img_metas'][0]['frame_dir'])
+            # print(label.squeeze())
             scores, logits = self.forward_test(imgs)
             return [{
                     kwargs['img_metas'][0]['frame_dir'] : [
