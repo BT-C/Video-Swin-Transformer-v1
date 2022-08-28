@@ -2009,11 +2009,17 @@ class EveryFrameSample:
         start_index = segment_id * self.clip_len
         end_index = (segment_id + 1) * self.clip_len
         end_index = min(end_index, total_frames)
-        self.clip_len = end_index - start_index
+        new_clip_len = end_index - start_index
+        if new_clip_len == 0:
+            start_index -= 1
+            new_clip_len = end_index - start_index
+        # ----------------------------------------------
+        print(results['frame_dir'], start_index, end_index, new_clip_len)
+        # ----------------------------------------------
         frame_inds = np.arange(start_index, end_index)
         
         results['frame_inds'] = frame_inds.astype(np.int)
-        results['clip_len'] = self.clip_len
+        results['clip_len'] = new_clip_len
         results['frame_interval'] = self.frame_interval
         results['num_clips'] = self.num_clips
         return results
