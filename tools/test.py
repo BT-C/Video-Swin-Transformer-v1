@@ -375,10 +375,10 @@ def main():
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_focal_32_100.json', 'w') as fd:
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_32_95.json', 'w') as fd:
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result/logits_160_87.json', 'w') as fd:
-    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/every_frame.json', 'w') as fd:
+    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/test_result.json', 'w') as fd:
         json.dump(score_dict, fd)
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/test_result_logits.json', 'w') as fd:
-    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/ensemble/ensemble-list/every_frame_logits.json', 'w') as fd:
+    with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/ensemble/ensemble-list/test_result_cutout_logits.json', 'w') as fd:
         json.dump(logits_dict, fd)
     # with open('/home/chenbeitao/data/code/mmlab/Video-Swin-Transformer/Recurrent/result/json_result_test/test_result_wsal_samplev2.json', 'w') as fd:
     #     json.dump(wsal_score, fd)

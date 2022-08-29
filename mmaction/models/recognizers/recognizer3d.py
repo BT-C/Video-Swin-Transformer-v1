@@ -18,13 +18,13 @@ class Recognizer3D(BaseRecognizer):
                  train_cfg=None,
                  test_cfg=None):
         super(Recognizer3D, self).__init__(backbone, cls_head, neck, train_cfg, test_cfg)
-        self.momentum_score = torch.zeros((1, 17))
-        self.momentum_alpha = 0.9
-        self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
-        self.clip_fc = nn.Linear(16, 32)
-        self.cas_fc = nn.Linear(1536, 17)
-        self.class_fc = nn.Linear(1536, 1)
-        self.output_record = []
+        # self.momentum_score = torch.zeros((1, 17))
+        # self.momentum_alpha = 0.9
+        # self.pool_2d = nn.AdaptiveAvgPool2d((1, 1))
+        # self.clip_fc = nn.Linear(16, 32)
+        # self.cas_fc = nn.Linear(1536, 17)
+        # self.class_fc = nn.Linear(1536, 1)
+        # self.output_record = []
 
     def wsal_pred(self, x):
         feature_x = self.pool_2d(x) # (N, 1536, 16, 1, 1)
@@ -115,15 +115,15 @@ class Recognizer3D(BaseRecognizer):
             losses.update(loss_aux)
 
         ''' Weakly-supervise action location'''
-        class_score = self.wsal_pred(x)[0]
-        import torch.nn.functional as F
-        wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
-        losses.update({"wsal_loss" : wsal_loss_cls})
+        # class_score = self.wsal_pred(x)[0]
+        # import torch.nn.functional as F
+        # wsal_loss_cls = F.binary_cross_entropy(F.sigmoid(class_score), labels)
+        # losses.update({"wsal_loss" : wsal_loss_cls})
 
-        ''' Weakly-supervise action location single frame label '''
-        single_label_loss = self.wsal_pred_label(x, imgs, labels, weight=5e-2)
-        # if single_label_loss != -1:
-        losses.update({"single_label_loss" : single_label_loss})
+        # ''' Weakly-supervise action location single frame label '''
+        # single_label_loss = self.wsal_pred_label(x, imgs, labels, weight=5e-2)
+        # # if single_label_loss != -1:
+        # losses.update({"single_label_loss" : single_label_loss})
 
         ''' GCN '''
         # feature = self.cls_head.avg_pool(x)

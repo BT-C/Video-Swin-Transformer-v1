@@ -2024,4 +2024,243 @@ class EveryFrameSample:
         results['num_clips'] = self.num_clips
         return results
 
+
+
+@PIPELINES.register_module()
+class CutOutDecordDecode:
+    """Using decord to decode the video.
+
+    Decord: https://github.com/dmlc/decord
+
+    Required keys are "video_reader", "filename" and "frame_inds",
+    added or modified keys are "imgs" and "original_shape".
+
+    self.datasets = UrbanPipe Datasets
+    """
+
+    # def __init__(self):
+        # label_count = [0 for _ in range(17)]
+        # ann_file = "/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/train.json"
+        # ann_dict = json.load(open(ann_file, 'r'))
+        # for key in ann_dict:
+        #     labels = ann_dict[key] 
+        #     for label in labels:
+        #         label_count[label] += 1
+        
+    def __call__(self, results):
+        """Perform the Decord decoding.
+
+        Args:
+            results (dict): The resulting dict to be modified and passed
+                to the next transform in pipeline.
+        """
+
+        if random.random() < 0.5:
+            return self.get_single_video(results)
+            # return self.mix_video(results)
+        else:
+            return self.cutout_video(results)
+    
+    def find_idx(self):
+        length = len(self.datasets.video_infos)
+        idx = int(random.random() * length)
+        return idx
+
+    def get_another_video(self):
+        idx = self.find_idx()
+        another_results = copy.deepcopy(self.datasets.video_infos[idx])
+        another_results['modality'] = self.datasets.modality
+        another_results['start_index'] = self.datasets.start_index
+
+        # prepare tensor in getitem
+        # If HVU, type(results['label']) is dict
+        if self.datasets.multi_class and isinstance(another_results['label'], list):
+            onehot = torch.zeros(self.datasets.num_classes)
+            onehot[another_results['label']] = 1.
+            another_results['label'] = onehot
+
+        transforms = self.datasets.pipeline.transforms
+        another_results = transforms[0](another_results)
+        another_results = transforms[1](another_results)
+
+        return another_results
+        
+    def cutout_video(self, results):
+        results = self.get_single_video(results)
+        imgs = results['imgs']
+
+        import copy
+        for i in range(len(imgs)):
+            temp_img = copy.deepcopy(imgs[i])
+            cut_count = int(random.random() * 30)
+            H, W = temp_img.shape[:2]
+            for j in range(cut_count):
+                x = int(random.random() * (H - 70))
+                y = int(random.random() * (W - 70))
+                h = int(random.random() * 40 + 30)
+                w = int(random.random() * 40 + 30)
+                temp_img[x:x+h, y:y+w] = 0
+            imgs[i] = temp_img
+
+        results['frame_dir'] = 'cutout_video'
+        results['imgs'] = imgs
+        # results['label'] = mix_label
+        results['original_shape'] = imgs[0].shape[:2]
+        results['img_shape'] = imgs[0].shape[:2]
+
+        return results
+
+    def get_single_video(self, results):
+        container = results['video_reader']
+
+        if results['frame_inds'].ndim != 1:
+            results['frame_inds'] = np.squeeze(results['frame_inds'])
+
+        frame_inds = results['frame_inds']
+        # print(len(container), frame_inds)
+        # print(len(container), frame_inds.max())
+        # assert len(container) > frame_inds.max()
+        # Generate frame index mapping in order
+        frame_dict = {
+            idx: container[idx].asnumpy()
+            for idx in np.unique(frame_inds)
+        }
+
+        imgs = [frame_dict[idx] for idx in frame_inds]
+
+        results['video_reader'] = None
+        del container
+
+        results['imgs'] = imgs
+        results['original_shape'] = imgs[0].shape[:2]
+        results['img_shape'] = imgs[0].shape[:2]
+
+        return results
+
+
+
+@PIPELINES.register_module()
+class MixupDecordDecode:
+    """Using decord to decode the video.
+
+    Decord: https://github.com/dmlc/decord
+
+    Required keys are "video_reader", "filename" and "frame_inds",
+    added or modified keys are "imgs" and "original_shape".
+
+    self.datasets = UrbanPipe Datasets
+    """
+
+    # def __init__(self):
+        # label_count = [0 for _ in range(17)]
+        # ann_file = "/mnt/hdd1/chenbeitao/data/datasets/UrbanPipe-Track/train.json"
+        # ann_dict = json.load(open(ann_file, 'r'))
+        # for key in ann_dict:
+        #     labels = ann_dict[key] 
+        #     for label in labels:
+        #         label_count[label] += 1
+        
+    def __call__(self, results):
+        """Perform the Decord decoding.
+
+        Args:
+            results (dict): The resulting dict to be modified and passed
+                to the next transform in pipeline.
+        """
+
+        if random.random() < 0.5:
+            return self.get_single_video(results)
+            # return self.mix_video(results)
+        else:
+            return self.mix_video(results)
+    
+    def find_idx(self):
+        length = len(self.datasets.video_infos)
+        idx = int(random.random() * length)
+        return idx
+        
+    def mix_video(self, results):
+        idx = self.find_idx()
+        another_results = copy.deepcopy(self.datasets.video_infos[idx])
+        another_results['modality'] = self.datasets.modality
+        another_results['start_index'] = self.datasets.start_index
+
+        # prepare tensor in getitem
+        # If HVU, type(results['label']) is dict
+        if self.datasets.multi_class and isinstance(another_results['label'], list):
+            onehot = torch.zeros(self.datasets.num_classes)
+            onehot[another_results['label']] = 1.
+            another_results['label'] = onehot
+
+        transforms = self.datasets.pipeline.transforms
+        another_results = transforms[0](another_results)
+        another_results = transforms[1](another_results)
+        results = self.get_single_video(results)
+        another_results = self.get_single_video(another_results)
+        img1 = results['imgs']
+        img2 = another_results['imgs']
+        label1 = results['label']
+        label2 = another_results['label']
+        
+        # assert img1[0].shape[:2] == img2[0].shape[:2]
+        if img1[0].shape[:2] != img2[0].shape[:2]:
+            img_size = (img1[0].shape[1], img1[0].shape[0])
+            # print(img1[0].shape, img2[0].shape)
+            for j in range(len(img2)):
+                img2[j] = cv2.resize(img2[j], img_size, interpolation=cv2.INTER_LINEAR)
+        # print(img1[0].shape, img2[0].shape)
+
+        mix_imgs = []
+        # row_flag = (random.random() > 0.5)
+        # for i in range(len(img1)):
+        #     row1 = np.hstack((img1[i], img2[i]))
+        #     row2 = np.hstack((img2[i], img1[i]))
+        #     if row_flag:
+        #         temp_mix_img = np.vstack((row1, row2))
+        #     else:
+        #         temp_mix_img = np.vstack((row2, row1))
+        #     mix_imgs.append(temp_mix_img)
+        alpha = 0.3 + random.random() * 0.5
+        for i in range(len(img1)):
+            temp_mix_img = alpha * img1[i] + (1 - alpha) * img2[i]
+            mix_imgs.append(temp_mix_img)
+        # mix_label = ((label1 + label2) >= 1.0).float()
+        mix_label = (alpha * label1 + (1 - alpha) * label2).float()
+
+        results['frame_dir'] = 'mix_up_video'
+        results['imgs'] = mix_imgs
+        results['label'] = mix_label
+        results['original_shape'] = mix_imgs[0].shape[:2]
+        results['img_shape'] = mix_imgs[0].shape[:2]
+
+        return results
+
+
+    def get_single_video(self, results):
+        container = results['video_reader']
+
+        if results['frame_inds'].ndim != 1:
+            results['frame_inds'] = np.squeeze(results['frame_inds'])
+
+        frame_inds = results['frame_inds']
+        # print(len(container), frame_inds)
+        # print(len(container), frame_inds.max())
+        # assert len(container) > frame_inds.max()
+        # Generate frame index mapping in order
+        frame_dict = {
+            idx: container[idx].asnumpy()
+            for idx in np.unique(frame_inds)
+        }
+
+        imgs = [frame_dict[idx] for idx in frame_inds]
+
+        results['video_reader'] = None
+        del container
+
+        results['imgs'] = imgs
+        results['original_shape'] = imgs[0].shape[:2]
+        results['img_shape'] = imgs[0].shape[:2]
+
+        return results
+ 
 # ======================================================================
