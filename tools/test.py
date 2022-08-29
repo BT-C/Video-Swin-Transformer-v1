@@ -354,20 +354,21 @@ def main():
 
     wsal_score = {}
     wsal_logits = {}
-    # for output in outputs:
-    #     key = list(output)[0]
-    #     score_dict.update({key : output[key][0]})
-    #     logits_dict.update({key : output[key][1]})
-    #     # wsal_score.update({key : output[key][2]})
-    #     # wsal_logits.update({key : output[key][3]})
     for output in outputs:
         key = list(output)[0]
-        if key not in score_dict:
-            score_dict[key] = []
-        if key not in logits_dict:
-            logits_dict[key] = []
-        score_dict[key].append(output[key][0])
-        logits_dict[key].append(output[key][1])
+        score_dict.update({key : output[key][0]})
+        logits_dict.update({key : output[key][1]})
+        # wsal_score.update({key : output[key][2]})
+        # wsal_logits.update({key : output[key][3]})
+        
+    # for output in outputs:
+    #     key = list(output)[0]
+    #     if key not in score_dict:
+    #         score_dict[key] = []
+    #     if key not in logits_dict:
+    #         logits_dict[key] = []
+    #     score_dict[key].append(output[key][0])
+    #     logits_dict[key].append(output[key][1])
 
 
     import json

@@ -33,8 +33,9 @@ class UrbanPipe(BaseDataset):
 
         from mmaction.datasets.pipelines.loading import MixDecordDecode
         from mmaction.datasets.pipelines.loading import MixTimeDecordDecode
+        from mmaction.datasets.pipelines.loading import MixupDecordDecode
         for i, t in enumerate(self.pipeline.transforms):
-            if type(t) == MixDecordDecode or  type(t) == MixTimeDecordDecode:
+            if type(t) == MixDecordDecode or  type(t) == MixTimeDecordDecode or type(t) == MixupDecordDecode:
                 self.pipeline.transforms[i].datasets = self
 
 
