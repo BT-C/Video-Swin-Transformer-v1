@@ -32,6 +32,7 @@ ann_file_train = 'data/urbanpipe/train.json'
 ann_file_test = 'data/urbanpipe/test.json'
 # ann_file_test = 'data/urbanpipe/development.json'
 ann_file_val = ann_file_train
+ann_file_test = ann_file_train
 # ann_file_test = ann_file_train
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
